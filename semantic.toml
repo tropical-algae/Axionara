@@ -1,0 +1,90 @@
+[semantic_release]
+build_command = """
+    pip install uv
+    uv lock --frozen
+    git add uv.lock
+    uv build
+"""
+assets = []
+build_command_env = []
+commit_message = "v{version} release!"
+commit_parser = "conventional"
+logging_use_named_masks = false
+major_on_zero = true
+allow_zero_version = true
+no_git_verify = false
+tag_format = "v{version}"
+version_toml = ["pyproject.toml:project.version"]
+version_variables = ["src/axionara/__init__.py:__version__"]
+
+
+[semantic_release.branches.main]
+match = "(master|main)"
+prerelease_token = ""
+prerelease = false
+
+
+# [semantic_release.branches.beta]
+# match = "(dev)"
+# prerelease = true
+# prerelease_token = "beta"
+
+
+[semantic_release.changelog]
+exclude_commit_patterns = []
+mode = "update"
+insertion_flag = "<!-- version list -->"
+template_dir = "templates"
+
+[semantic_release.changelog.default_templates]
+changelog_file = "CHANGELOG.md"
+output_format = "md"
+mask_initial_release = false
+
+[semantic_release.changelog.environment]
+
+block_start_string = "{%"
+block_end_string = "%}"
+variable_start_string = "{{"
+variable_end_string = "}}"
+comment_start_string = "{#"
+comment_end_string = "#}"
+
+trim_blocks = false
+lstrip_blocks = false
+newline_sequence = "\n"
+keep_trailing_newline = false
+extensions = []
+autoescape = false
+
+[semantic_release.commit_author]
+env = "GIT_COMMIT_AUTHOR"
+default = "github-actions <actions@github.com>"
+
+[semantic_release.commit_parser_options]
+# major_tags = ["release"]
+minor_tags = ["update"]
+patch_tags = ["feat", "fix", "chore", "refactor"]
+allowed_tags = [
+  "chore",
+  "update",
+  "docs",
+  "feat",
+  "fix",
+  "perf",
+  "test",
+  "release",
+  "refactor",
+]
+default_bump_level = 0
+parse_squash_commits = true
+ignore_merge_commits = true
+
+[semantic_release.remote]
+name = "origin"
+type = "github"
+token = { env = "GH_TOKEN" }
+ignore_token_for_push = false
+insecure = false
+url = "https://github.com/tropical-algae/Axionara.git"
+# domain = "https://github.com"

@@ -1,0 +1,99 @@
+
+name: detection-release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  detection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup | Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup | Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y git
+          pip install pre-commit==4.3.0
+
+      - name: Run pre-commit checks
+        run: |
+          pre-commit run --all-files --show-diff-on-failure
+
+  release:
+    runs-on: ubuntu-latest
+    needs: detection
+    if: github.ref == 'refs/heads/main'
+    concurrency:
+      group: ${{ github.workflow }}-release-${{ github.ref_name }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    steps:
+      - name: Setup | Checkout Repository on Release Branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Setup | Force release branch to be at workflow sha
+        run: |
+          git reset --hard ${{ github.sha }}
+
+      - name: Evaluate | Verify upstream has NOT changed
+        shell: bash
+        run: |
+          set +o pipefail
+
+          UPSTREAM_BRANCH_NAME="$(git status -sb | head -n 1 | cut -d' ' -f2 | grep -E '\.{3}' | cut -d'.' -f4)"
+          printf '%s\n' "Upstream branch name: $UPSTREAM_BRANCH_NAME"
+
+          set -o pipefail
+
+          if [ -z "$UPSTREAM_BRANCH_NAME" ]; then
+              printf >&2 '%s\n' "::error::Unable to determine upstream branch name!"
+              exit 1
+          fi
+
+          git fetch "${UPSTREAM_BRANCH_NAME%%/*}"
+
+          if ! UPSTREAM_SHA="$(git rev-parse "$UPSTREAM_BRANCH_NAME")"; then
+              printf >&2 '%s\n' "::error::Unable to determine upstream branch sha!"
+              exit 1
+          fi
+
+          HEAD_SHA="$(git rev-parse HEAD)"
+
+          if [ "$HEAD_SHA" != "$UPSTREAM_SHA" ]; then
+              printf >&2 '%s\n' "[HEAD SHA] $HEAD_SHA != $UPSTREAM_SHA [UPSTREAM SHA]"
+              printf >&2 '%s\n' "::error::Upstream has changed, aborting release..."
+              exit 1
+          fi
+
+          printf '%s\n' "Verified upstream branch has not changed, continuing with release..."
+
+      - name: Action | Semantic Version Release
+        id: release
+        uses: python-semantic-release/python-semantic-release@v10.3.1
+        with:
+          config_file: semantic.toml
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          git_committer_name: "github-actions"
+          git_committer_email: "actions@users.noreply.github.com"
+
+      - name: Publish | Upload to GitHub Release Assets
+        uses: python-semantic-release/publish-action@v10.3.1
+        if: steps.release.outputs.released == 'true'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.release.outputs.tag }}

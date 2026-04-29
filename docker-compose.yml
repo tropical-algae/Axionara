@@ -1,0 +1,15 @@
+
+services:
+  app:
+    container_name: "my_service"
+    build:
+      context: .
+      args:
+        DEV: "true"
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    command: poe run
+    volumes:
+      - /data/log:/workspace/log

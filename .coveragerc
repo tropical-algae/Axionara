@@ -1,0 +1,20 @@
+[run]
+concurrency = thread, greenlet, multiprocessing
+omit =
+    src/axionara/app/api/endpoints/chat.py
+    src/axionara/app/api/endpoints/session.py
+    src/axionara/app/api/endpoints/tool.py
+    src/axionara/app/api/endpoints/user.py
+    src/axionara/app/services/inference_service.py
+    src/axionara/app/services/session_service.py
+    src/axionara/app/utils/errors.py
+    src/axionara/app/utils/events.py
+    src/axionara/common/decorator.py
+    src/axionara/common/logging.py
+    src/axionara/common/util.py
+    src/axionara/core/agent/*
+    src/axionara/core/db/crud/session_crud.py
+    src/axionara/core/model/base.py
+    src/axionara/core/model/message.py
+    src/axionara/core/model/tool.py
+    src/axionara/main.py

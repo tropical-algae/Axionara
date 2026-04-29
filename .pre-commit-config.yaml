@@ -1,0 +1,49 @@
+default_stages: [pre-commit]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks.git
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ['--maxkb=1024']
+      - id: check-toml
+      - id: check-yaml
+        args:
+          - "--unsafe"
+      - id: end-of-file-fixer
+      # - id: trailing-whitespace
+      - id: check-json
+      - id: debug-statements
+      - id: check-case-conflict
+      - id: detect-private-key
+      - id: name-tests-test
+        args:
+          - "--pytest-test-first"
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.0
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+
+  - repo: https://github.com/codespell-project/codespell.git
+    rev: v2.4.1
+    hooks:
+      - id: codespell
+        files: \.(py)$
+
+  - repo: https://github.com/hukkin/mdformat
+    rev: 0.7.22
+    hooks:
+      - id: mdformat
+        files: ^(?!CHANGELOG\.md$).*\.(md|markdown)$
+        # Optionally add plugins
+        additional_dependencies:
+          - mdformat-gfm
+          - mdformat-black
+
+  - repo: https://github.com/ComPWA/taplo-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: taplo-format

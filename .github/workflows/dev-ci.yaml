@@ -1,0 +1,42 @@
+name: detection
+
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+    branches-ignore:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  detection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository setup
+        uses: actions/checkout@v4
+
+      - name: Python 3.11 setup
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y git
+
+      - name: Install project dependencies
+        run: |
+          pip install --upgrade pip
+          pip install uv==0.9.7
+          uv sync --dev --frozen
+
+      - name: Run pre-commit checks
+        run: |
+          uv run pre-commit run --all-files --show-diff-on-failure
+
+      - name: Run pytest
+        run: |
+          uv run poe test
