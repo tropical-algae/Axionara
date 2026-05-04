@@ -364,3 +364,59 @@ class AccessGrant(SQLModel, table=True):
             "create_date", TIMESTAMP, server_default=text("CURRENT_TIMESTAMP")
         ),
     )
+
+
+class ExportJob(SQLModel, table=True):
+    __tablename__ = "export_job"
+    __table_args__ = (
+        Index("ix_export_job_dataset_id", "dataset_id"),
+        Index("ix_export_job_user_id", "user_id"),
+        Index("ix_export_job_grant_id", "grant_id"),
+        Index("ix_export_job_status", "job_status"),
+    )
+
+    id: str = Field(sa_column=Column("id", String(32), primary_key=True))
+    dataset_id: str = Field(sa_column=Column("dataset_id", String(32)))
+    user_id: str = Field(sa_column=Column("user_id", String(32)))
+    grant_id: str = Field(sa_column=Column("grant_id", String(32)))
+    target_format: str = Field(sa_column=Column("target_format", String(16)))
+    job_status: str = Field(default="pending", sa_column=Column("job_status", String(32)))
+    error_message: str | None = Field(
+        default=None, sa_column=Column("error_message", Text)
+    )
+    output_bucket: str | None = Field(
+        default=None, sa_column=Column("output_bucket", String(64))
+    )
+    output_object_key: str | None = Field(
+        default=None, sa_column=Column("output_object_key", String(255))
+    )
+    output_filename: str | None = Field(
+        default=None, sa_column=Column("output_filename", String(255))
+    )
+    output_content_type: str | None = Field(
+        default=None, sa_column=Column("output_content_type", String(128))
+    )
+    output_size_bytes: int = Field(
+        default=0, sa_column=Column("output_size_bytes", BigInteger)
+    )
+    started_at: datetime | None = Field(
+        default=None, sa_column=Column("started_at", TIMESTAMP)
+    )
+    finished_at: datetime | None = Field(
+        default=None, sa_column=Column("finished_at", TIMESTAMP)
+    )
+    create_date: datetime | None = Field(
+        default=None,
+        sa_column=Column(
+            "create_date", TIMESTAMP, server_default=text("CURRENT_TIMESTAMP")
+        ),
+    )
+    update_date: datetime | None = Field(
+        default=None,
+        sa_column=Column(
+            "update_date",
+            TIMESTAMP,
+            server_default=text("CURRENT_TIMESTAMP"),
+            server_onupdate=text("CURRENT_TIMESTAMP"),
+        ),
+    )

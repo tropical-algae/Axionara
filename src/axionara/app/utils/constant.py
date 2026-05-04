@@ -96,6 +96,18 @@ class Constant(BaseSettings):
         "status_code": status.HTTP_404_NOT_FOUND,
         "detail": "数据授权记录不存在",
     }
+    RESP_EXPORT_FORMAT_UNSUPPORTED: dict = {
+        "status_code": status.HTTP_400_BAD_REQUEST,
+        "detail": "当前数据资产不支持该导出格式",
+    }
+    RESP_EXPORT_JOB_NOT_EXISTS: dict = {
+        "status_code": status.HTTP_404_NOT_FOUND,
+        "detail": "导出任务不存在",
+    }
+    RESP_EXPORT_JOB_NOT_READY: dict = {
+        "status_code": status.HTTP_400_BAD_REQUEST,
+        "detail": "导出任务尚未完成",
+    }
 
 
 CONSTANT = Constant()

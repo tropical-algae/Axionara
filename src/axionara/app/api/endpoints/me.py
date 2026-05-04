@@ -1,15 +1,22 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends, Security
+from fastapi import APIRouter, BackgroundTasks, Depends, Security
+from fastapi.responses import Response
 from sqlmodel import Session
 
 from axionara.app.api.deps import get_current_user, get_db
 from axionara.app.services.access_service import AccessService
+from axionara.app.services.export_service import (
+    ExportService,
+    process_export_job_background,
+)
 from axionara.core.db.models import UserAccount
 from axionara.core.model.dataset import (
     AccessGrantRead,
     DatasetAssetRead,
     DatasetProfileRead,
+    ExportJobRead,
+    ExportRequest,
     MyDatasetRead,
 )
 from axionara.core.model.user import ScopeType
@@ -34,3 +41,58 @@ async def my_datasets(
         )
         for grant, dataset, profile, tags in rows
     ]
+
+
+@router.post("/datasets/{dataset_id}/exports", response_model=ExportJobRead)
+async def request_dataset_export(
+    dataset_id: str,
+    request: ExportRequest,
+    background_tasks: BackgroundTasks,
+    current_user: UserAccount = Security(
+        get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
+    ),
+    db: Session = Depends(get_db),
+) -> Any:
+    job = ExportService().create_export_job(
+        db=db,
+        dataset_id=dataset_id,
+        target_format=request.target_format.value,
+        user=current_user,
+    )
+    background_tasks.add_task(process_export_job_background, job.id)
+    return job
+
+
+@router.get("/exports", response_model=list[ExportJobRead])
+async def my_export_jobs(
+    dataset_id: str | None = None,
+    current_user: UserAccount = Security(
+        get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
+    ),
+    db: Session = Depends(get_db),
+) -> Any:
+    return ExportService().list_my_export_jobs(
+        db=db, user=current_user, dataset_id=dataset_id
+    )
+
+
+@router.get("/exports/{job_id}", response_model=ExportJobRead)
+async def my_export_job_detail(
+    job_id: str,
+    current_user: UserAccount = Security(
+        get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
+    ),
+    db: Session = Depends(get_db),
+) -> Any:
+    return ExportService().get_my_export_job(db=db, job_id=job_id, user=current_user)
+
+
+@router.get("/exports/{job_id}/download", response_class=Response)
+async def download_my_export(
+    job_id: str,
+    current_user: UserAccount = Security(
+        get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
+    ),
+    db: Session = Depends(get_db),
+) -> Response:
+    return ExportService().download_export(db=db, job_id=job_id, user=current_user)

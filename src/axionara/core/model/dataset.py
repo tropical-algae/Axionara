@@ -157,3 +157,42 @@ class MyDatasetRead(BaseModel):
     dataset: DatasetAssetRead
     profile: DatasetProfileRead
     tags: list[str] = []
+
+
+class ExportFormat(StrEnum):
+    RAW = "raw"
+    CSV = "csv"
+    JSON = "json"
+    SQL = "sql"
+
+
+class ExportJobStatus(StrEnum):
+    PENDING = "pending"
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+
+
+class ExportRequest(BaseModel):
+    target_format: ExportFormat
+
+
+class ExportJobRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    dataset_id: str
+    user_id: str
+    grant_id: str
+    target_format: str
+    job_status: str
+    error_message: str | None = None
+    output_bucket: str | None = None
+    output_object_key: str | None = None
+    output_filename: str | None = None
+    output_content_type: str | None = None
+    output_size_bytes: int
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    create_date: datetime | None = None
+    update_date: datetime | None = None

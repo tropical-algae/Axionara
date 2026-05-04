@@ -1,7 +1,7 @@
 import asyncio
 
 import pytest
-from fastapi import UploadFile
+from fastapi import BackgroundTasks, UploadFile
 from sqlmodel import Session
 
 from axionara.app.api.endpoints.admin_dataset import (
@@ -17,14 +17,21 @@ from axionara.app.api.endpoints.catalog import (
     list_catalog_datasets,
     list_catalog_tags,
 )
-from axionara.app.api.endpoints.me import my_datasets
+from axionara.app.api.endpoints.me import (
+    download_my_export,
+    my_datasets,
+    my_export_job_detail,
+    my_export_jobs,
+    request_dataset_export,
+)
 from axionara.app.api.endpoints.provider_dataset import (
     my_uploaded_datasets,
     upload_dataset,
     uploaded_dataset_detail,
 )
+from axionara.app.services.export_service import ExportService
 from axionara.core.db.crud import select_user_by_id, select_user_by_username
-from axionara.core.model.dataset import ReviewRequest
+from axionara.core.model.dataset import ExportFormat, ExportRequest, ReviewRequest
 from tests.conftest import DataStore
 
 
@@ -196,6 +203,45 @@ def test_my_datasets_lists_acquired_dataset(db_session: Session, data_store: Dat
 
 
 @pytest.mark.run(order=16)
+def test_consumer_exports_acquired_dataset_as_sql(
+    db_session: Session, data_store: DataStore
+):
+    consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+    assert consumer is not None
+
+    job = asyncio.run(
+        request_dataset_export(
+            dataset_id=data_store.uploaded_dataset_id,
+            request=ExportRequest(target_format=ExportFormat.SQL),
+            background_tasks=BackgroundTasks(),
+            current_user=consumer,
+            db=db_session,
+        )
+    )
+    processed = ExportService().process_export_job(db=db_session, job_id=job.id)
+    detail = asyncio.run(
+        my_export_job_detail(job_id=job.id, current_user=consumer, db=db_session)
+    )
+    jobs = asyncio.run(
+        my_export_jobs(
+            dataset_id=data_store.uploaded_dataset_id,
+            current_user=consumer,
+            db=db_session,
+        )
+    )
+    download = asyncio.run(
+        download_my_export(job_id=job.id, current_user=consumer, db=db_session)
+    )
+
+    assert processed.job_status == "succeeded"
+    assert detail.id == job.id
+    assert any(row.id == job.id for row in jobs)
+    assert processed.output_filename == "population.sql"
+    assert b"CREATE TABLE `population`" in download.body
+    assert b"INSERT INTO `population`" in download.body
+
+
+@pytest.mark.run(order=17)
 def test_pdf_analysis_skips_cleaning(
     db_session: Session, data_store: DataStore, pdf_upload: UploadFile
 ):
