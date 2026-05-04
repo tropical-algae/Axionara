@@ -14,7 +14,10 @@ from axionara.core.db.session import init_db_models, local_session
 class DataStore(BaseModel):
     provider_token_data: str | None = None
     provider_user_id: str | None = None
+    admin_user_id: str | None = None
+    consumer_user_id: str | None = None
     uploaded_dataset_id: str | None = None
+    uploaded_pdf_dataset_id: str | None = None
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -41,4 +44,12 @@ def test_csv_upload() -> UploadFile:
     return UploadFile(
         filename="population.csv",
         file=BytesIO(b"region,population\nA,10\nB,20\n"),
+    )
+
+
+@pytest.fixture(name="pdf_upload")
+def test_pdf_upload() -> UploadFile:
+    return UploadFile(
+        filename="report.pdf",
+        file=BytesIO(b"%PDF-1.4\n% demo pdf bytes\n"),
     )

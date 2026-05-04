@@ -25,6 +25,24 @@ TEMP_USER: dict = {
     "role": ScopeType.PROVIDER.value,
 }
 
+TEMP_ADMIN: dict = {
+    "username": "admin_user",
+    "password": "123456",
+    "full_name": "Admin User",
+    "organization": "Axionara Lab",
+    "email": "admin@test.com",
+    "role": ScopeType.ADMIN.value,
+}
+
+TEMP_CONSUMER: dict = {
+    "username": "consumer_user",
+    "password": "123456",
+    "full_name": "Consumer User",
+    "organization": "Axionara Lab",
+    "email": "consumer@test.com",
+    "role": ScopeType.CONSUMER.value,
+}
+
 
 @pytest.mark.run(order=1)
 def test_system_status():
@@ -82,3 +100,19 @@ def test_user_token(db_session: Session, data_store: DataStore):
     profile = asyncio.run(current_user_profile(current_user=user))
     assert token_payload.username == TEMP_USER["username"]
     assert profile.username == TEMP_USER["username"]
+
+
+@pytest.mark.run(order=5)
+def test_admin_register(db_session: Session, data_store: DataStore):
+    payload = asyncio.run(user_register(user=UserBasicInfo(**TEMP_ADMIN), db=db_session))
+    data_store.admin_user_id = payload.id
+    assert payload.role == ScopeType.ADMIN.value
+
+
+@pytest.mark.run(order=6)
+def test_consumer_register(db_session: Session, data_store: DataStore):
+    payload = asyncio.run(
+        user_register(user=UserBasicInfo(**TEMP_CONSUMER), db=db_session)
+    )
+    data_store.consumer_user_id = payload.id
+    assert payload.role == ScopeType.CONSUMER.value

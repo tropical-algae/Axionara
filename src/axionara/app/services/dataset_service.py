@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import HTTPException, UploadFile
 from sqlmodel import Session
 
+from axionara.app.services.storage_service import get_storage_service
 from axionara.app.utils.constant import CONSTANT
 from axionara.common.config import settings
 from axionara.common.util import generate_random_token
@@ -13,7 +14,6 @@ from axionara.core.db.crud import (
 )
 from axionara.core.db.models import DatasetAsset, UserAccount
 from axionara.core.model.dataset import DatasetAssetStatus, DatasetSourceFormat
-from axionara.core.storage import LocalStorageService
 
 SUPPORTED_UPLOAD_FORMATS = {item.value for item in DatasetSourceFormat}
 
@@ -35,12 +35,17 @@ async def create_dataset_asset(
     source_format = detect_source_format(upload_file.filename)
     dataset_id = generate_random_token(prefix="DAT", length=24)
     original_filename = Path(upload_file.filename or f"{dataset_id}.{source_format}").name
-    storage_uri = f"datasets/{dataset_id}/{original_filename}"
+    object_key = f"raw/{dataset_id}/{original_filename}"
     payload = upload_file.file.read()
     upload_file.file.close()
 
-    storage = LocalStorageService(root_dir=settings.LOCAL_STORAGE_ROOT)
-    await storage.save_bytes(relative_path=storage_uri, content=payload)
+    storage = get_storage_service()
+    stored = storage.save_bytes(
+        bucket=settings.MINIO_BUCKET_RAW,
+        object_key=object_key,
+        content=payload,
+        content_type=upload_file.content_type,
+    )
 
     dataset = DatasetAsset(
         id=dataset_id,
@@ -49,8 +54,12 @@ async def create_dataset_asset(
         owner_id=owner.id,
         source_format=source_format,
         original_filename=original_filename,
-        storage_uri=storage_uri,
-        file_size_bytes=len(payload),
+        storage_uri=stored.uri,
+        raw_bucket=stored.bucket,
+        raw_object_key=stored.object_key,
+        content_type=stored.content_type,
+        etag=stored.etag,
+        file_size_bytes=stored.size,
         status=DatasetAssetStatus.UPLOADED.value,
     )
     return insert_dataset_asset(db=db, dataset=dataset)

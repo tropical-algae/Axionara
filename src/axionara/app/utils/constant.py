@@ -76,6 +76,26 @@ class Constant(BaseSettings):
         "status_code": status.HTTP_400_BAD_REQUEST,
         "detail": "当前文件类型暂不支持上传",
     }
+    RESP_ANALYSIS_NOT_EXISTS: dict = {
+        "status_code": status.HTTP_404_NOT_FOUND,
+        "detail": "数据分析结果不存在",
+    }
+    RESP_PROFILE_NOT_EXISTS: dict = {
+        "status_code": status.HTTP_404_NOT_FOUND,
+        "detail": "数据档案不存在",
+    }
+    RESP_DATASET_NOT_REVIEWABLE: dict = {
+        "status_code": status.HTTP_400_BAD_REQUEST,
+        "detail": "当前数据资产尚未完成分析，不能审核",
+    }
+    RESP_DATASET_NOT_PUBLISHABLE: dict = {
+        "status_code": status.HTTP_400_BAD_REQUEST,
+        "detail": "当前数据资产尚未通过审核，不能发布",
+    }
+    RESP_ACCESS_GRANT_NOT_EXISTS: dict = {
+        "status_code": status.HTTP_404_NOT_FOUND,
+        "detail": "数据授权记录不存在",
+    }
 
 
 CONSTANT = Constant()

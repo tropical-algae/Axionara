@@ -17,4 +17,5 @@ omit =
     src/axionara/core/model/base.py
     src/axionara/core/model/message.py
     src/axionara/core/model/tool.py
+    src/axionara/core/storage/minio.py
     src/axionara/main.py

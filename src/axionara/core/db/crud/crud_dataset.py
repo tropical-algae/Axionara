@@ -22,3 +22,12 @@ def select_datasets_by_owner(db: Session, owner_id: str) -> list[DatasetAsset]:
         .order_by(DatasetAsset.create_date.desc())
     )
     return list(result.all())
+
+
+def select_datasets_by_status(db: Session, status: str) -> list[DatasetAsset]:
+    result = db.exec(
+        select(DatasetAsset)
+        .where(DatasetAsset.status == status)
+        .order_by(DatasetAsset.create_date.desc())
+    )
+    return list(result.all())

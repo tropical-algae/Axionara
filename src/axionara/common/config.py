@@ -59,7 +59,15 @@ class ServiceSetting(BaseSettings):
 
 
 class StorageSetting(BaseSettings):
+    STORAGE_BACKEND: str = "minio"
     LOCAL_STORAGE_ROOT: str = "cache/storage"
+    MINIO_ENDPOINT: str = "localhost:20005"
+    MINIO_ACCESS_KEY: str = "minioadmin"
+    MINIO_SECRET_KEY: str = "minioadmin"
+    MINIO_SECURE: bool = False
+    MINIO_BUCKET_RAW: str = "axionara-raw"
+    MINIO_BUCKET_ANALYSIS: str = "axionara-analysis"
+    MINIO_BUCKET_ARTIFACTS: str = "axionara-artifacts"
 
 
 class Setting(SysSetting, BasicSetting, LogSetting, ServiceSetting, StorageSetting):
