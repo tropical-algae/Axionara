@@ -5,11 +5,14 @@ from sqlmodel import Session
 
 from axionara.app.api.deps import get_current_user, get_db
 from axionara.app.services.access_service import AccessService
+from axionara.app.services.catalog_rag_service import CatalogRagService
 from axionara.app.services.catalog_service import CatalogService
 from axionara.core.db.models import UserAccount
 from axionara.core.model.dataset import (
     AccessGrantRead,
     CatalogDatasetRead,
+    CatalogRagRequest,
+    CatalogRagResponse,
     DatasetAssetRead,
     DatasetProfileRead,
     TagRead,
@@ -62,6 +65,35 @@ async def catalog_dataset_detail(
 @router.get("/tags", response_model=list[TagRead])
 async def list_catalog_tags(db: Session = Depends(get_db)) -> Any:
     return CatalogService().list_tags(db=db)
+
+
+@router.post("/ask", response_model=CatalogRagResponse)
+async def ask_catalog_dataset_profiles(
+    request: CatalogRagRequest,
+    db: Session = Depends(get_db),
+) -> Any:
+    return CatalogRagService().ask(
+        db=db,
+        question=request.question,
+        dataset_id=request.dataset_id,
+        tag_slug=request.tag_slug,
+        limit=request.limit,
+    )
+
+
+@router.post("/datasets/{dataset_id}/ask", response_model=CatalogRagResponse)
+async def ask_catalog_dataset_profile(
+    dataset_id: str,
+    request: CatalogRagRequest,
+    db: Session = Depends(get_db),
+) -> Any:
+    return CatalogRagService().ask(
+        db=db,
+        question=request.question,
+        dataset_id=dataset_id,
+        tag_slug=request.tag_slug,
+        limit=request.limit,
+    )
 
 
 @router.post("/datasets/{dataset_id}/acquire", response_model=AccessGrantRead)

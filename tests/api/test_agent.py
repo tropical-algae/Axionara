@@ -13,6 +13,8 @@ from axionara.app.api.endpoints.admin_dataset import (
 )
 from axionara.app.api.endpoints.catalog import (
     acquire_catalog_dataset,
+    ask_catalog_dataset_profile,
+    ask_catalog_dataset_profiles,
     catalog_dataset_detail,
     list_catalog_datasets,
     list_catalog_tags,
@@ -31,7 +33,12 @@ from axionara.app.api.endpoints.provider_dataset import (
 )
 from axionara.app.services.export_service import ExportService
 from axionara.core.db.crud import select_user_by_id, select_user_by_username
-from axionara.core.model.dataset import ExportFormat, ExportRequest, ReviewRequest
+from axionara.core.model.dataset import (
+    CatalogRagRequest,
+    ExportFormat,
+    ExportRequest,
+    ReviewRequest,
+)
 from tests.conftest import DataStore
 
 
@@ -165,6 +172,33 @@ def test_catalog_tag_filter(db_session: Session, data_store: DataStore):
 
 
 @pytest.mark.run(order=14)
+def test_catalog_public_profile_rag_answer(db_session: Session, data_store: DataStore):
+    response = asyncio.run(
+        ask_catalog_dataset_profiles(
+            request=CatalogRagRequest(question="这个人口数据支持什么导出格式？"),
+            db=db_session,
+        )
+    )
+    scoped = asyncio.run(
+        ask_catalog_dataset_profile(
+            dataset_id=data_store.uploaded_dataset_id,
+            request=CatalogRagRequest(question="这个数据有哪些统计信息？"),
+            db=db_session,
+        )
+    )
+
+    assert response.raw_content_used is False
+    assert response.source_scope == "public_dataset_profile"
+    assert any(
+        match.dataset_id == data_store.uploaded_dataset_id for match in response.matches
+    )
+    assert "支持导出格式" in response.answer
+    assert "sql" in response.answer
+    assert scoped.matches[0].dataset_id == data_store.uploaded_dataset_id
+    assert "公开统计" in scoped.answer
+
+
+@pytest.mark.run(order=15)
 def test_consumer_acquires_dataset(db_session: Session, data_store: DataStore):
     consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
     assert consumer is not None
@@ -189,7 +223,7 @@ def test_consumer_acquires_dataset(db_session: Session, data_store: DataStore):
     assert duplicate.id == grant.id
 
 
-@pytest.mark.run(order=15)
+@pytest.mark.run(order=16)
 def test_my_datasets_lists_acquired_dataset(db_session: Session, data_store: DataStore):
     consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
     assert consumer is not None
@@ -202,7 +236,7 @@ def test_my_datasets_lists_acquired_dataset(db_session: Session, data_store: Dat
     assert "csv" in rows[0].tags
 
 
-@pytest.mark.run(order=16)
+@pytest.mark.run(order=17)
 def test_consumer_exports_acquired_dataset_as_sql(
     db_session: Session, data_store: DataStore
 ):
@@ -241,7 +275,7 @@ def test_consumer_exports_acquired_dataset_as_sql(
     assert b"INSERT INTO `population`" in download.body
 
 
-@pytest.mark.run(order=17)
+@pytest.mark.run(order=18)
 def test_pdf_analysis_skips_cleaning(
     db_session: Session, data_store: DataStore, pdf_upload: UploadFile
 ):

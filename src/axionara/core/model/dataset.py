@@ -138,6 +138,29 @@ class TagRead(BaseModel):
     is_active: bool
 
 
+class CatalogRagRequest(BaseModel):
+    question: str
+    dataset_id: str | None = None
+    tag_slug: str | None = None
+    limit: int = 3
+
+
+class CatalogRagMatch(BaseModel):
+    dataset_id: str
+    title: str
+    score: float
+    tags: list[str] = []
+    snippet: str
+
+
+class CatalogRagResponse(BaseModel):
+    question: str
+    answer: str
+    matches: list[CatalogRagMatch]
+    source_scope: str = "public_dataset_profile"
+    raw_content_used: bool = False
+
+
 class AccessGrantRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
