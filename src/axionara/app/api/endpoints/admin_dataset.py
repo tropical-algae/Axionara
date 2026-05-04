@@ -23,13 +23,14 @@ router = APIRouter()
 @router.post("/datasets/{dataset_id}/analyze", response_model=AnalysisJobRead)
 async def analyze_dataset(
     dataset_id: str,
+    use_llm: bool = False,
     current_user: UserAccount = Security(
         get_current_user, scopes=[ScopeType.ADMIN.value]
     ),
     db: Session = Depends(get_db),
 ) -> Any:
     return AnalysisOrchestrator().run_dataset_analysis(
-        db=db, dataset_id=dataset_id, triggered_by=current_user, use_llm=False
+        db=db, dataset_id=dataset_id, triggered_by=current_user, use_llm=use_llm
     )
 
 

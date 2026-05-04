@@ -1,3 +1,7 @@
+import json_repair
+from llama_index.llms.openai import OpenAI
+
+from axionara.common.config import settings
 from axionara.core.db.models import DatasetAsset
 from axionara.core.processing.types import CleaningResult, ParsedResult, SummaryTagResult
 
@@ -147,7 +151,41 @@ class SummaryTagGenerator:
         export_capabilities: dict,
         use_llm: bool = False,
     ) -> SummaryTagResult:
-        _ = use_llm
+        fallback = self._generate_rule_based(
+            dataset=dataset,
+            statistics=statistics,
+            cleaning_actions=cleaning_actions,
+            issues=issues,
+            export_capabilities=export_capabilities,
+        )
+        if not use_llm or not settings.GPT_API_KEY:
+            return fallback
+
+        try:
+            return self._generate_with_llm(
+                dataset=dataset,
+                statistics=statistics,
+                cleaning_actions=cleaning_actions,
+                issues=issues,
+                export_capabilities=export_capabilities,
+                fallback=fallback,
+            )
+        except Exception as err:
+            fallback.llm_output_json = {
+                "status": "fallback",
+                "reason": "llm_generation_failed",
+                "error": str(err),
+            }
+            return fallback
+
+    def _generate_rule_based(
+        self,
+        dataset: DatasetAsset,
+        statistics: dict,
+        cleaning_actions: dict,
+        issues: dict,
+        export_capabilities: dict,
+    ) -> SummaryTagResult:
         representation_type = statistics.get("common", {}).get(
             "representation_type", "unknown"
         )
@@ -199,3 +237,88 @@ class SummaryTagGenerator:
             suggested_tags=suggested_tags,
             llm_output_json=None,
         )
+
+    def _generate_with_llm(
+        self,
+        dataset: DatasetAsset,
+        statistics: dict,
+        cleaning_actions: dict,
+        issues: dict,
+        export_capabilities: dict,
+        fallback: SummaryTagResult,
+    ) -> SummaryTagResult:
+        llm = OpenAI(
+            api_key=settings.GPT_API_KEY,
+            api_base=settings.GPT_BASE_URL or None,
+            model=settings.GPT_DEFAULT_MODEL,
+            temperature=settings.GPT_TEMPERATURE,
+        )
+        response = llm.complete(
+            self._build_llm_prompt(
+                dataset=dataset,
+                statistics=statistics,
+                cleaning_actions=cleaning_actions,
+                issues=issues,
+                export_capabilities=export_capabilities,
+            )
+        )
+        payload = json_repair.loads(response.text)
+        if not isinstance(payload, dict):
+            return fallback
+
+        return SummaryTagResult(
+            public_summary=payload.get("public_summary") or fallback.public_summary,
+            processing_summary=payload.get("processing_summary")
+            or fallback.processing_summary,
+            cleaning_summary=payload.get("cleaning_summary") or fallback.cleaning_summary,
+            risk_summary=payload.get("risk_summary") or fallback.risk_summary,
+            public_rag_text=payload.get("public_rag_text") or fallback.public_rag_text,
+            suggested_tags=self._merge_suggested_tags(
+                fallback=fallback.suggested_tags,
+                llm_tags=payload.get("suggested_tags"),
+            ),
+            llm_output_json={"status": "completed", "payload": payload},
+        )
+
+    def _merge_suggested_tags(self, fallback: dict, llm_tags: object) -> dict:
+        fallback_items = fallback.get("items", [])
+        llm_items = llm_tags.get("items", []) if isinstance(llm_tags, dict) else []
+        merged = []
+        seen = set()
+        for item in [*fallback_items, *llm_items]:
+            if not isinstance(item, dict):
+                continue
+            key = (item.get("slug"), item.get("category"))
+            if key in seen or not key[0] or not key[1]:
+                continue
+            seen.add(key)
+            merged.append(item)
+        return {"items": merged}
+
+    def _build_llm_prompt(
+        self,
+        dataset: DatasetAsset,
+        statistics: dict,
+        cleaning_actions: dict,
+        issues: dict,
+        export_capabilities: dict,
+    ) -> str:
+        return f"""
+你是数据资产审核助手。请只基于以下公开元数据生成数据资产公开展示内容，不能编造原始数据内容，不能输出隐私样本值。
+
+数据标题：{dataset.title}
+数据描述：{dataset.description or ""}
+源格式：{dataset.source_format}
+公开统计：{statistics}
+清洗动作：{cleaning_actions}
+质量问题：{issues}
+导出能力：{export_capabilities}
+
+请只输出 JSON 对象，字段为：
+public_summary: 面向数据使用者的简短摘要
+processing_summary: 系统完成了哪些处理
+cleaning_summary: 清洗过程做了哪些调整，不能包含隐私信息
+risk_summary: 公开展示风险说明
+public_rag_text: 用于公开概况问答的材料
+suggested_tags: {{"items": [{{"name": "...", "slug": "...", "category": "domain|format|data_type", "source": "llm", "confidence": 0.0到1.0}}]}}
+""".strip()

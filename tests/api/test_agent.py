@@ -32,13 +32,17 @@ from axionara.app.api.endpoints.provider_dataset import (
     uploaded_dataset_detail,
 )
 from axionara.app.services.export_service import ExportService
+from axionara.common.config import settings
 from axionara.core.db.crud import select_user_by_id, select_user_by_username
+from axionara.core.db.models import DatasetAsset
 from axionara.core.model.dataset import (
     CatalogRagRequest,
     ExportFormat,
     ExportRequest,
     ReviewRequest,
 )
+from axionara.core.processing.analyzers.simple import SummaryTagGenerator
+from axionara.core.processing.types import SummaryTagResult
 from tests.conftest import DataStore
 
 
@@ -306,3 +310,50 @@ def test_pdf_analysis_skips_cleaning(
     assert analysis.representation_type == "document"
     assert analysis.cleaning_status == "skipped"
     assert analysis.export_capabilities["allowed_formats"] == ["raw"]
+
+
+def test_summary_tag_generator_uses_llm_when_enabled(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(settings, "GPT_API_KEY", "fake-key")
+
+    def fake_generate_with_llm(self, **kwargs):
+        _ = self, kwargs
+        return SummaryTagResult(
+            public_summary="LLM 生成的公开摘要",
+            processing_summary="LLM 生成的处理说明",
+            cleaning_summary="LLM 生成的清洗说明",
+            risk_summary="LLM 生成的风险说明",
+            public_rag_text="LLM 生成的公开问答材料",
+            suggested_tags={
+                "items": [
+                    {
+                        "name": "人口",
+                        "slug": "population",
+                        "category": "domain",
+                        "source": "llm",
+                        "confidence": 0.9,
+                    }
+                ]
+            },
+            llm_output_json={"status": "completed"},
+        )
+
+    monkeypatch.setattr(SummaryTagGenerator, "_generate_with_llm", fake_generate_with_llm)
+    result = SummaryTagGenerator().generate(
+        dataset=DatasetAsset(
+            id="DATTEST",
+            title="Population Dataset",
+            owner_id="USRTEST",
+            source_format="csv",
+            original_filename="population.csv",
+            storage_uri="raw/population.csv",
+        ),
+        statistics={"common": {"representation_type": "tabular"}},
+        cleaning_actions={"items": []},
+        issues={"total_count": 0},
+        export_capabilities={"allowed_formats": ["raw", "csv", "json", "sql"]},
+        use_llm=True,
+    )
+
+    assert result.public_summary == "LLM 生成的公开摘要"
+    assert result.llm_output_json == {"status": "completed"}
+    assert result.suggested_tags["items"][0]["slug"] == "population"
