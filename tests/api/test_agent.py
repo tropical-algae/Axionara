@@ -13,6 +13,7 @@ from axionara.app.api.endpoints.admin_dataset import (
     latest_dataset_analysis,
     pending_datasets,
     publish_dataset,
+    retry_analysis_job,
 )
 from axionara.app.api.endpoints.catalog import (
     acquire_catalog_dataset,
@@ -28,6 +29,7 @@ from axionara.app.api.endpoints.me import (
     my_export_job_detail,
     my_export_jobs,
     request_dataset_export,
+    retry_my_export,
 )
 from axionara.app.api.endpoints.provider_dataset import (
     my_uploaded_datasets,
@@ -36,7 +38,12 @@ from axionara.app.api.endpoints.provider_dataset import (
 )
 from axionara.app.services.export_service import ExportService
 from axionara.common.config import settings
-from axionara.core.db.crud import select_user_by_id, select_user_by_username
+from axionara.core.db.crud import (
+    select_user_by_id,
+    select_user_by_username,
+    update_analysis_job,
+    update_export_job,
+)
 from axionara.core.db.models import DatasetAsset
 from axionara.core.model.dataset import (
     CatalogRagRequest,
@@ -160,6 +167,31 @@ def test_admin_lists_datasets_and_analysis_jobs(
 
 
 @pytest.mark.run(order=12)
+def test_admin_retries_failed_analysis_job(db_session: Session, data_store: DataStore):
+    admin = select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+    assert admin is not None
+
+    jobs = asyncio.run(
+        analysis_jobs(
+            dataset_id=data_store.uploaded_dataset_id,
+            current_user=admin,
+            db=db_session,
+        )
+    )
+    failed_job = jobs[0]
+    failed_job.job_status = "failed"
+    update_analysis_job(db=db_session, job=failed_job)
+
+    retry_job = asyncio.run(
+        retry_analysis_job(job_id=failed_job.id, current_user=admin, db=db_session)
+    )
+
+    assert retry_job.id != failed_job.id
+    assert retry_job.dataset_id == data_store.uploaded_dataset_id
+    assert retry_job.job_status == "succeeded"
+
+
+@pytest.mark.run(order=13)
 def test_admin_approve_and_publish_dataset(db_session: Session, data_store: DataStore):
     admin = select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
     assert admin is not None
@@ -189,7 +221,7 @@ def test_admin_approve_and_publish_dataset(db_session: Session, data_store: Data
     assert published.review_status == "published"
 
 
-@pytest.mark.run(order=13)
+@pytest.mark.run(order=14)
 def test_catalog_lists_published_dataset(db_session: Session, data_store: DataStore):
     rows = asyncio.run(list_catalog_datasets(db=db_session))
     detail = asyncio.run(
@@ -203,13 +235,13 @@ def test_catalog_lists_published_dataset(db_session: Session, data_store: DataSt
     assert any(tag.slug == "csv" for tag in tags)
 
 
-@pytest.mark.run(order=14)
+@pytest.mark.run(order=15)
 def test_catalog_tag_filter(db_session: Session, data_store: DataStore):
     rows = asyncio.run(list_catalog_datasets(tag_slug="csv", db=db_session))
     assert any(row.dataset.id == data_store.uploaded_dataset_id for row in rows)
 
 
-@pytest.mark.run(order=15)
+@pytest.mark.run(order=16)
 def test_catalog_public_profile_rag_answer(db_session: Session, data_store: DataStore):
     response = asyncio.run(
         ask_catalog_dataset_profiles(
@@ -236,7 +268,7 @@ def test_catalog_public_profile_rag_answer(db_session: Session, data_store: Data
     assert "公开统计" in scoped.answer
 
 
-@pytest.mark.run(order=16)
+@pytest.mark.run(order=17)
 def test_consumer_acquires_dataset(db_session: Session, data_store: DataStore):
     consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
     assert consumer is not None
@@ -261,7 +293,7 @@ def test_consumer_acquires_dataset(db_session: Session, data_store: DataStore):
     assert duplicate.id == grant.id
 
 
-@pytest.mark.run(order=17)
+@pytest.mark.run(order=18)
 def test_my_datasets_lists_acquired_dataset(db_session: Session, data_store: DataStore):
     consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
     assert consumer is not None
@@ -274,7 +306,7 @@ def test_my_datasets_lists_acquired_dataset(db_session: Session, data_store: Dat
     assert "csv" in rows[0].tags
 
 
-@pytest.mark.run(order=18)
+@pytest.mark.run(order=19)
 def test_consumer_exports_acquired_dataset_as_sql(
     db_session: Session, data_store: DataStore
 ):
@@ -313,7 +345,39 @@ def test_consumer_exports_acquired_dataset_as_sql(
     assert b"INSERT INTO `population`" in download.body
 
 
-@pytest.mark.run(order=19)
+@pytest.mark.run(order=20)
+def test_consumer_retries_failed_export_job(db_session: Session, data_store: DataStore):
+    consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+    assert consumer is not None
+
+    jobs = asyncio.run(
+        my_export_jobs(
+            dataset_id=data_store.uploaded_dataset_id,
+            current_user=consumer,
+            db=db_session,
+        )
+    )
+    failed_job = jobs[0]
+    failed_job.job_status = "failed"
+    failed_job.error_message = "simulated export failure"
+    update_export_job(db=db_session, job=failed_job)
+
+    retry_job = asyncio.run(
+        retry_my_export(
+            job_id=failed_job.id,
+            background_tasks=BackgroundTasks(),
+            current_user=consumer,
+            db=db_session,
+        )
+    )
+    processed = ExportService().process_export_job(db=db_session, job_id=retry_job.id)
+
+    assert retry_job.id != failed_job.id
+    assert retry_job.target_format == failed_job.target_format
+    assert processed.job_status == "succeeded"
+
+
+@pytest.mark.run(order=21)
 def test_pdf_analysis_skips_cleaning(
     db_session: Session,
     data_store: DataStore,
@@ -365,7 +429,7 @@ def test_pdf_analysis_skips_cleaning(
     assert analysis.export_capabilities["allowed_formats"] == ["raw"]
 
 
-@pytest.mark.run(order=20)
+@pytest.mark.run(order=22)
 def test_xlsx_analysis_and_export(
     db_session: Session, data_store: DataStore, xlsx_upload: UploadFile
 ):
@@ -438,7 +502,7 @@ def test_xlsx_analysis_and_export(
     assert b'"region": "A"' in download.body
 
 
-@pytest.mark.run(order=21)
+@pytest.mark.run(order=23)
 def test_sql_upload_analysis_keeps_raw_only(
     db_session: Session, data_store: DataStore, sql_upload: UploadFile
 ):

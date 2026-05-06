@@ -89,6 +89,23 @@ async def analysis_job_detail(
     return AnalysisOrchestrator().get_analysis_job(db=db, job_id=job_id)
 
 
+@router.post("/analysis-jobs/{job_id}/retry", response_model=AnalysisJobRead)
+async def retry_analysis_job(
+    job_id: str,
+    use_llm: bool = False,
+    current_user: UserAccount = Security(
+        get_current_user, scopes=[ScopeType.ADMIN.value]
+    ),
+    db: Session = Depends(get_db),
+) -> Any:
+    return AnalysisOrchestrator().retry_analysis_job(
+        db=db,
+        job_id=job_id,
+        triggered_by=current_user,
+        use_llm=use_llm,
+    )
+
+
 @router.get("/datasets/pending", response_model=list[DatasetAssetRead])
 async def pending_datasets(
     current_user: UserAccount = Security(

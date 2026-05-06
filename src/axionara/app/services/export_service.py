@@ -114,6 +114,17 @@ class ExportService:
             raise HTTPException(**CONSTANT.RESP_DATASET_FORBIDDEN)
         return job
 
+    def retry_export_job(self, db: Session, job_id: str, user: UserAccount) -> ExportJob:
+        job = self.get_my_export_job(db=db, job_id=job_id, user=user)
+        if job.job_status != ExportJobStatus.FAILED.value:
+            raise HTTPException(**CONSTANT.RESP_EXPORT_JOB_NOT_RETRYABLE)
+        return self.create_export_job(
+            db=db,
+            dataset_id=job.dataset_id,
+            target_format=job.target_format,
+            user=user,
+        )
+
     def download_export(self, db: Session, job_id: str, user: UserAccount) -> Response:
         job = self.get_my_export_job(db=db, job_id=job_id, user=user)
         if (

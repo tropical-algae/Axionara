@@ -84,6 +84,10 @@ class Constant(BaseSettings):
         "status_code": status.HTTP_404_NOT_FOUND,
         "detail": "数据分析任务不存在",
     }
+    RESP_ANALYSIS_JOB_NOT_RETRYABLE: dict = {
+        "status_code": status.HTTP_400_BAD_REQUEST,
+        "detail": "只有失败的数据分析任务可以重试",
+    }
     RESP_PROFILE_NOT_EXISTS: dict = {
         "status_code": status.HTTP_404_NOT_FOUND,
         "detail": "数据档案不存在",
@@ -111,6 +115,10 @@ class Constant(BaseSettings):
     RESP_EXPORT_JOB_NOT_READY: dict = {
         "status_code": status.HTTP_400_BAD_REQUEST,
         "detail": "导出任务尚未完成",
+    }
+    RESP_EXPORT_JOB_NOT_RETRYABLE: dict = {
+        "status_code": status.HTTP_400_BAD_REQUEST,
+        "detail": "只有失败的导出任务可以重试",
     }
 
 

@@ -87,6 +87,20 @@ async def my_export_job_detail(
     return ExportService().get_my_export_job(db=db, job_id=job_id, user=current_user)
 
 
+@router.post("/exports/{job_id}/retry", response_model=ExportJobRead)
+async def retry_my_export(
+    job_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: UserAccount = Security(
+        get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
+    ),
+    db: Session = Depends(get_db),
+) -> Any:
+    job = ExportService().retry_export_job(db=db, job_id=job_id, user=current_user)
+    background_tasks.add_task(process_export_job_background, job.id)
+    return job
+
+
 @router.get("/exports/{job_id}/download", response_class=Response)
 async def download_my_export(
     job_id: str,

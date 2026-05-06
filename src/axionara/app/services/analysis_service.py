@@ -201,6 +201,23 @@ class AnalysisOrchestrator:
             raise HTTPException(**CONSTANT.RESP_ANALYSIS_JOB_NOT_EXISTS)
         return job
 
+    def retry_analysis_job(
+        self,
+        db: Session,
+        job_id: str,
+        triggered_by: UserAccount,
+        use_llm: bool = False,
+    ) -> AnalysisJob:
+        job = self.get_analysis_job(db=db, job_id=job_id)
+        if job.job_status != "failed":
+            raise HTTPException(**CONSTANT.RESP_ANALYSIS_JOB_NOT_RETRYABLE)
+        return self.run_dataset_analysis(
+            db=db,
+            dataset_id=job.dataset_id,
+            triggered_by=triggered_by,
+            use_llm=use_llm,
+        )
+
     def _get_dataset(self, db: Session, dataset_id: str) -> DatasetAsset:
         dataset = select_dataset_by_id(db=db, dataset_id=dataset_id)
         if dataset is None:
