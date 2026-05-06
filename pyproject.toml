@@ -28,6 +28,7 @@ dependencies = [
   "asyncmy>=0.2.11",
   "cryptography>=46.0.3",
   "minio>=7.2.0,<8",
+  "openpyxl>=3.1.5,<4",
 ]
 
 [project.urls]

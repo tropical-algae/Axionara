@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import HTTPException, Response
+from openpyxl import load_workbook
 from sqlmodel import Session
 
 from axionara.app.services.storage_service import get_storage_service
@@ -167,16 +168,43 @@ class ExportService:
     def _load_tabular_rows(
         self, dataset: DatasetAsset, raw_content: bytes
     ) -> list[dict[str, Any]]:
-        text = raw_content.decode("utf-8-sig", errors="replace")
         if dataset.source_format == "csv":
+            text = raw_content.decode("utf-8-sig", errors="replace")
             return list(csv.DictReader(io.StringIO(text)))
         if dataset.source_format == "json":
+            text = raw_content.decode("utf-8-sig", errors="replace")
             payload = json.loads(text)
             if isinstance(payload, list) and all(
                 isinstance(row, dict) for row in payload
             ):
                 return payload
+        if dataset.source_format == "xlsx":
+            return self._load_xlsx_rows(raw_content=raw_content)
         raise HTTPException(**CONSTANT.RESP_EXPORT_FORMAT_UNSUPPORTED)
+
+    def _load_xlsx_rows(self, raw_content: bytes) -> list[dict[str, Any]]:
+        workbook = load_workbook(
+            filename=io.BytesIO(raw_content),
+            read_only=True,
+            data_only=True,
+        )
+        for worksheet in workbook.worksheets:
+            rows = [
+                list(row)
+                for row in worksheet.iter_rows(values_only=True)
+                if any(cell is not None for cell in row)
+            ]
+            if not rows:
+                continue
+            columns = [
+                str(value).strip() if value not in (None, "") else f"column_{index + 1}"
+                for index, value in enumerate(rows[0])
+            ]
+            return [
+                {columns[index]: value for index, value in enumerate(row[: len(columns)])}
+                for row in rows[1:]
+            ]
+        return []
 
     def _csv_artifact(self, base_name: str, rows: list[dict[str, Any]]) -> dict[str, Any]:
         output = io.StringIO()

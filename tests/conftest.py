@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from fastapi import UploadFile
+from openpyxl import Workbook
 from pydantic import BaseModel
 from sqlmodel import Session
 
@@ -18,10 +19,11 @@ class DataStore(BaseModel):
     consumer_user_id: str | None = None
     uploaded_dataset_id: str | None = None
     uploaded_pdf_dataset_id: str | None = None
+    uploaded_xlsx_dataset_id: str | None = None
 
 
 @pytest.fixture(scope="session", autouse=True)
-def initialize_database() -> Generator[None, None, None]:
+def _initialize_database() -> Generator[None, None, None]:
     Path("cache/database.db").unlink(missing_ok=True)
     shutil.rmtree("cache/storage", ignore_errors=True)
     init_db_models()
@@ -53,3 +55,17 @@ def test_pdf_upload() -> UploadFile:
         filename="report.pdf",
         file=BytesIO(b"%PDF-1.4\n% demo pdf bytes\n"),
     )
+
+
+@pytest.fixture(name="xlsx_upload")
+def test_xlsx_upload() -> UploadFile:
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "population"
+    worksheet.append(["region", "population"])
+    worksheet.append(["A", 10])
+    worksheet.append(["B", 20])
+    content = BytesIO()
+    workbook.save(content)
+    content.seek(0)
+    return UploadFile(filename="population.xlsx", file=content)

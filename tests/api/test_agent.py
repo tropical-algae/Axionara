@@ -316,6 +316,79 @@ def test_pdf_analysis_skips_cleaning(
     assert analysis.export_capabilities["allowed_formats"] == ["raw"]
 
 
+@pytest.mark.run(order=19)
+def test_xlsx_analysis_and_export(
+    db_session: Session, data_store: DataStore, xlsx_upload: UploadFile
+):
+    provider = select_user_by_username(db=db_session, username="provider_user")
+    admin = select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+    consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+    assert provider is not None
+    assert admin is not None
+    assert consumer is not None
+
+    uploaded = asyncio.run(
+        upload_dataset(
+            title="XLSX Population Dataset",
+            description="Demo xlsx upload",
+            file=xlsx_upload,
+            current_user=provider,
+            db=db_session,
+        )
+    )
+    data_store.uploaded_xlsx_dataset_id = uploaded.id
+    job = asyncio.run(
+        analyze_dataset(dataset_id=uploaded.id, current_user=admin, db=db_session)
+    )
+    analysis = asyncio.run(
+        latest_dataset_analysis(dataset_id=uploaded.id, current_user=admin, db=db_session)
+    )
+    asyncio.run(
+        approve_dataset(
+            dataset_id=uploaded.id,
+            request=ReviewRequest(comment="xlsx analysis looks good"),
+            current_user=admin,
+            db=db_session,
+        )
+    )
+    asyncio.run(
+        publish_dataset(
+            dataset_id=uploaded.id,
+            request=ReviewRequest(comment="publish xlsx"),
+            current_user=admin,
+            db=db_session,
+        )
+    )
+    asyncio.run(
+        acquire_catalog_dataset(
+            dataset_id=uploaded.id,
+            current_user=consumer,
+            db=db_session,
+        )
+    )
+    export_job = asyncio.run(
+        request_dataset_export(
+            dataset_id=uploaded.id,
+            request=ExportRequest(target_format=ExportFormat.JSON),
+            background_tasks=BackgroundTasks(),
+            current_user=consumer,
+            db=db_session,
+        )
+    )
+    processed = ExportService().process_export_job(db=db_session, job_id=export_job.id)
+    download = asyncio.run(
+        download_my_export(job_id=export_job.id, current_user=consumer, db=db_session)
+    )
+
+    assert job.job_status == "succeeded"
+    assert analysis.parser_status == "completed"
+    assert analysis.schema_snapshot["sheet_name"] == "population"
+    assert "json" in analysis.export_capabilities["allowed_formats"]
+    assert processed.job_status == "succeeded"
+    assert processed.output_filename == "population.json"
+    assert b'"region": "A"' in download.body
+
+
 def test_summary_tag_generator_uses_llm_when_enabled(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(settings, "GPT_API_KEY", "fake-key")
 

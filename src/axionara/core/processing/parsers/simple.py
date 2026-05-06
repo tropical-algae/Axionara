@@ -2,6 +2,8 @@ import csv
 import io
 import json
 
+from openpyxl import load_workbook
+
 from axionara.core.db.models import DatasetAsset
 from axionara.core.processing.parsers.base import BaseParser
 from axionara.core.processing.types import ParsedResult
@@ -48,14 +50,46 @@ class JsonParser(BaseParser):
 
 class XlsxParser(BaseParser):
     def parse(self, dataset: DatasetAsset, content: bytes) -> ParsedResult:
-        _ = dataset, content
+        _ = dataset
+        workbook = load_workbook(
+            filename=io.BytesIO(content),
+            read_only=True,
+            data_only=True,
+        )
+        for worksheet in workbook.worksheets:
+            rows = [
+                list(row)
+                for row in worksheet.iter_rows(values_only=True)
+                if any(cell is not None for cell in row)
+            ]
+            if not rows:
+                continue
+            columns = [
+                str(value).strip() if value not in (None, "") else f"column_{index + 1}"
+                for index, value in enumerate(rows[0])
+            ]
+            records = [
+                {columns[index]: value for index, value in enumerate(row[: len(columns)])}
+                for row in rows[1:]
+            ]
+            return ParsedResult(
+                representation_type="tabular",
+                schema_snapshot={
+                    "sheet_name": worksheet.title,
+                    "columns": [{"name": name} for name in columns],
+                },
+                data=records,
+                preview_data=records[:10],
+                parser_notes=[
+                    f"parsed_rows={len(records)}",
+                    f"sheet_name={worksheet.title}",
+                ],
+            )
         return ParsedResult(
             representation_type="tabular",
             parser_status="skipped",
             schema_snapshot={"columns": []},
-            parser_notes=[
-                "xlsx parser placeholder: first non-empty sheet support pending"
-            ],
+            parser_notes=["xlsx workbook has no non-empty sheet"],
         )
 
 
