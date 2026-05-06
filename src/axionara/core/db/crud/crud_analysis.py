@@ -25,6 +25,25 @@ def update_analysis_job(db: Session, job: AnalysisJob) -> AnalysisJob:
     return job
 
 
+def select_analysis_job_by_id(db: Session, job_id: str) -> AnalysisJob | None:
+    result = db.exec(select(AnalysisJob).where(AnalysisJob.id == job_id))
+    return result.first()
+
+
+def select_analysis_jobs(
+    db: Session,
+    dataset_id: str | None = None,
+    job_status: str | None = None,
+) -> list[AnalysisJob]:
+    statement = select(AnalysisJob)
+    if dataset_id is not None:
+        statement = statement.where(AnalysisJob.dataset_id == dataset_id)
+    if job_status is not None:
+        statement = statement.where(AnalysisJob.job_status == job_status)
+    result = db.exec(statement.order_by(AnalysisJob.create_date.desc()))
+    return list(result.all())
+
+
 def insert_dataset_analysis(db: Session, analysis: DatasetAnalysis) -> DatasetAnalysis:
     db.add(analysis)
     db.commit()

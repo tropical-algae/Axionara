@@ -80,6 +80,10 @@ class Constant(BaseSettings):
         "status_code": status.HTTP_404_NOT_FOUND,
         "detail": "数据分析结果不存在",
     }
+    RESP_ANALYSIS_JOB_NOT_EXISTS: dict = {
+        "status_code": status.HTTP_404_NOT_FOUND,
+        "detail": "数据分析任务不存在",
+    }
     RESP_PROFILE_NOT_EXISTS: dict = {
         "status_code": status.HTTP_404_NOT_FOUND,
         "detail": "数据档案不存在",

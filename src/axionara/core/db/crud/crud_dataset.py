@@ -24,6 +24,11 @@ def select_datasets_by_owner(db: Session, owner_id: str) -> list[DatasetAsset]:
     return list(result.all())
 
 
+def select_all_datasets(db: Session) -> list[DatasetAsset]:
+    result = db.exec(select(DatasetAsset).order_by(DatasetAsset.create_date.desc()))
+    return list(result.all())
+
+
 def select_datasets_by_status(db: Session, status: str) -> list[DatasetAsset]:
     result = db.exec(
         select(DatasetAsset)

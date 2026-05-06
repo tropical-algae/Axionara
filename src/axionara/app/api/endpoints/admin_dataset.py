@@ -6,7 +6,7 @@ from sqlmodel import Session
 from axionara.app.api.deps import get_current_user, get_db
 from axionara.app.services.analysis_service import AnalysisOrchestrator
 from axionara.app.services.review_service import ReviewService
-from axionara.core.db.crud import select_datasets_by_status
+from axionara.core.db.crud import select_all_datasets, select_datasets_by_status
 from axionara.core.db.models import UserAccount
 from axionara.core.model.dataset import (
     AnalysisJobRead,
@@ -18,6 +18,20 @@ from axionara.core.model.dataset import (
 from axionara.core.model.user import ScopeType
 
 router = APIRouter()
+
+
+@router.get("/datasets", response_model=list[DatasetAssetRead])
+async def admin_datasets(
+    status: str | None = None,
+    current_user: UserAccount = Security(
+        get_current_user, scopes=[ScopeType.ADMIN.value]
+    ),
+    db: Session = Depends(get_db),
+) -> Any:
+    _ = current_user
+    if status is not None:
+        return select_datasets_by_status(db=db, status=status)
+    return select_all_datasets(db=db)
 
 
 @router.post("/datasets/{dataset_id}/analyze", response_model=AnalysisJobRead)
@@ -44,6 +58,35 @@ async def latest_dataset_analysis(
 ) -> Any:
     _ = current_user
     return AnalysisOrchestrator().get_latest_analysis(db=db, dataset_id=dataset_id)
+
+
+@router.get("/analysis-jobs", response_model=list[AnalysisJobRead])
+async def analysis_jobs(
+    dataset_id: str | None = None,
+    job_status: str | None = None,
+    current_user: UserAccount = Security(
+        get_current_user, scopes=[ScopeType.ADMIN.value]
+    ),
+    db: Session = Depends(get_db),
+) -> Any:
+    _ = current_user
+    return AnalysisOrchestrator().list_analysis_jobs(
+        db=db,
+        dataset_id=dataset_id,
+        job_status=job_status,
+    )
+
+
+@router.get("/analysis-jobs/{job_id}", response_model=AnalysisJobRead)
+async def analysis_job_detail(
+    job_id: str,
+    current_user: UserAccount = Security(
+        get_current_user, scopes=[ScopeType.ADMIN.value]
+    ),
+    db: Session = Depends(get_db),
+) -> Any:
+    _ = current_user
+    return AnalysisOrchestrator().get_analysis_job(db=db, job_id=job_id)
 
 
 @router.get("/datasets/pending", response_model=list[DatasetAssetRead])

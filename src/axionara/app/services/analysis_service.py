@@ -11,6 +11,8 @@ from axionara.core.db.crud import (
     insert_dataset_analysis,
     insert_dataset_tag,
     insert_tag,
+    select_analysis_job_by_id,
+    select_analysis_jobs,
     select_dataset_by_id,
     select_latest_dataset_analysis,
     select_tag_by_slug_category,
@@ -184,6 +186,20 @@ class AnalysisOrchestrator:
         if analysis is None:
             raise HTTPException(**CONSTANT.RESP_ANALYSIS_NOT_EXISTS)
         return analysis
+
+    def list_analysis_jobs(
+        self,
+        db: Session,
+        dataset_id: str | None = None,
+        job_status: str | None = None,
+    ) -> list[AnalysisJob]:
+        return select_analysis_jobs(db=db, dataset_id=dataset_id, job_status=job_status)
+
+    def get_analysis_job(self, db: Session, job_id: str) -> AnalysisJob:
+        job = select_analysis_job_by_id(db=db, job_id=job_id)
+        if job is None:
+            raise HTTPException(**CONSTANT.RESP_ANALYSIS_JOB_NOT_EXISTS)
+        return job
 
     def _get_dataset(self, db: Session, dataset_id: str) -> DatasetAsset:
         dataset = select_dataset_by_id(db=db, dataset_id=dataset_id)
