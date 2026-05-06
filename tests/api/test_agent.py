@@ -41,8 +41,12 @@ from axionara.core.model.dataset import (
     ExportRequest,
     ReviewRequest,
 )
-from axionara.core.processing.analyzers.simple import SummaryTagGenerator
-from axionara.core.processing.types import SummaryTagResult
+from axionara.core.processing.analyzers.simple import (
+    StatisticsBuilder,
+    SummaryTagGenerator,
+)
+from axionara.core.processing.cleaners.simple import RuleBasedCleaner
+from axionara.core.processing.types import ParsedResult, SummaryTagResult
 from tests.conftest import DataStore
 
 
@@ -357,3 +361,36 @@ def test_summary_tag_generator_uses_llm_when_enabled(monkeypatch: pytest.MonkeyP
     assert result.public_summary == "LLM 生成的公开摘要"
     assert result.llm_output_json == {"status": "completed"}
     assert result.suggested_tags["items"][0]["slug"] == "population"
+
+
+def test_rule_based_cleaner_profiles_tabular_quality():
+    parsed = ParsedResult(
+        representation_type="tabular",
+        schema_snapshot={"columns": [{"name": "Region Name"}, {"name": "Population"}]},
+        data=[
+            {"Region Name": " A ", "Population": "10"},
+            {"Region Name": "A", "Population": "10"},
+            {"Region Name": "B", "Population": ""},
+        ],
+    )
+    cleaned = RuleBasedCleaner().clean(parsed=parsed)
+    statistics = StatisticsBuilder().build(
+        dataset=DatasetAsset(
+            id="DATQUALITY",
+            title="Quality Dataset",
+            owner_id="USRTEST",
+            source_format="csv",
+            original_filename="quality.csv",
+            storage_uri="raw/quality.csv",
+        ),
+        parsed=parsed,
+        cleaned=cleaned,
+    )
+
+    assert cleaned.cleaning_status == "completed"
+    assert cleaned.normalized_data["record_count"] == 3
+    assert cleaned.normalized_data["duplicate_row_count"] == 1
+    assert cleaned.normalized_data["missing_value_count"] == 1
+    assert cleaned.normalized_data["columns"][0]["normalized_name"] == "region_name"
+    assert statistics["tabular"]["duplicate_row_count"] == 1
+    assert statistics["tabular"]["column_profiles"][1]["inferred_type"] == "integer"

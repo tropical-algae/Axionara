@@ -5,6 +5,7 @@ class ParsedResult(BaseModel):
     representation_type: str
     parser_status: str = "completed"
     schema_snapshot: dict = Field(default_factory=dict)
+    data: dict | list | None = None
     preview_data: dict | list | None = None
     extracted_text: str | None = None
     parser_notes: list[str] = Field(default_factory=list)

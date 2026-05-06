@@ -10,7 +10,6 @@ class StatisticsBuilder:
     def build(
         self, dataset: DatasetAsset, parsed: ParsedResult, cleaned: CleaningResult
     ) -> dict:
-        _ = cleaned
         common = {
             "source_format": dataset.source_format,
             "representation_type": parsed.representation_type,
@@ -19,38 +18,26 @@ class StatisticsBuilder:
             "etag": dataset.etag,
         }
         if parsed.representation_type == "tabular":
-            preview_rows = (
-                parsed.preview_data if isinstance(parsed.preview_data, list) else []
+            normalized = (
+                cleaned.normalized_data
+                if isinstance(cleaned.normalized_data, dict)
+                else {}
             )
-            columns = parsed.schema_snapshot.get("columns", [])
+            columns = normalized.get("columns") or parsed.schema_snapshot.get(
+                "columns", []
+            )
             return {
                 "common": common,
                 "tabular": {
-                    "record_count": self._extract_record_count(parsed),
+                    "record_count": normalized.get(
+                        "record_count", self._extract_record_count(parsed)
+                    ),
                     "column_count": len(columns),
-                    "duplicate_row_count": 0,
-                    "duplicate_row_ratio": 0,
-                    "missing_value_ratio": 0,
-                    "column_profiles": [
-                        {
-                            "name": column.get("name"),
-                            "normalized_name": self._normalize_column_name(
-                                column.get("name", "")
-                            ),
-                            "inferred_type": "string",
-                            "nullable": True,
-                            "null_count": 0,
-                            "null_ratio": 0,
-                            "unique_count": len(
-                                {
-                                    row.get(column.get("name"))
-                                    for row in preview_rows
-                                    if isinstance(row, dict)
-                                }
-                            ),
-                        }
-                        for column in columns
-                    ],
+                    "duplicate_row_count": normalized.get("duplicate_row_count", 0),
+                    "duplicate_row_ratio": normalized.get("duplicate_row_ratio", 0),
+                    "missing_value_count": normalized.get("missing_value_count", 0),
+                    "missing_value_ratio": normalized.get("missing_value_ratio", 0),
+                    "column_profiles": normalized.get("column_profiles", []),
                 },
                 "hierarchical": None,
                 "document": None,

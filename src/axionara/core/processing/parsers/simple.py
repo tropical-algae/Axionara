@@ -19,6 +19,7 @@ class CsvParser(BaseParser):
         return ParsedResult(
             representation_type="tabular",
             schema_snapshot={"columns": [{"name": name} for name in columns]},
+            data=rows,
             preview_data=rows[:10],
             parser_notes=[f"parsed_rows={len(rows)}"],
         )
@@ -33,12 +34,14 @@ class JsonParser(BaseParser):
             return ParsedResult(
                 representation_type="tabular",
                 schema_snapshot={"columns": [{"name": name} for name in columns]},
+                data=payload,
                 preview_data=payload[:10],
                 parser_notes=[f"parsed_rows={len(payload)}"],
             )
         return ParsedResult(
             representation_type="hierarchical",
             schema_snapshot={"root_type": type(payload).__name__},
+            data=payload,
             preview_data=payload,
         )
 
