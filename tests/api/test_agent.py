@@ -389,6 +389,40 @@ def test_xlsx_analysis_and_export(
     assert b'"region": "A"' in download.body
 
 
+@pytest.mark.run(order=20)
+def test_sql_upload_analysis_keeps_raw_only(
+    db_session: Session, data_store: DataStore, sql_upload: UploadFile
+):
+    provider = select_user_by_username(db=db_session, username="provider_user")
+    admin = select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+    assert provider is not None
+    assert admin is not None
+
+    uploaded = asyncio.run(
+        upload_dataset(
+            title="SQL Population Script",
+            description="Demo sql upload",
+            file=sql_upload,
+            current_user=provider,
+            db=db_session,
+        )
+    )
+    data_store.uploaded_sql_dataset_id = uploaded.id
+    job = asyncio.run(
+        analyze_dataset(dataset_id=uploaded.id, current_user=admin, db=db_session)
+    )
+    analysis = asyncio.run(
+        latest_dataset_analysis(dataset_id=uploaded.id, current_user=admin, db=db_session)
+    )
+
+    assert uploaded.source_format == "sql"
+    assert job.job_status == "succeeded"
+    assert analysis.representation_type == "document"
+    assert analysis.schema_snapshot["script_type"] == "sql"
+    assert analysis.cleaning_status == "skipped"
+    assert analysis.export_capabilities["allowed_formats"] == ["raw"]
+
+
 def test_summary_tag_generator_uses_llm_when_enabled(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(settings, "GPT_API_KEY", "fake-key")
 

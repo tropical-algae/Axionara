@@ -19,6 +19,7 @@ class DataStore(BaseModel):
     consumer_user_id: str | None = None
     uploaded_dataset_id: str | None = None
     uploaded_pdf_dataset_id: str | None = None
+    uploaded_sql_dataset_id: str | None = None
     uploaded_xlsx_dataset_id: str | None = None
 
 
@@ -54,6 +55,17 @@ def test_pdf_upload() -> UploadFile:
     return UploadFile(
         filename="report.pdf",
         file=BytesIO(b"%PDF-1.4\n% demo pdf bytes\n"),
+    )
+
+
+@pytest.fixture(name="sql_upload")
+def test_sql_upload() -> UploadFile:
+    return UploadFile(
+        filename="population.sql",
+        file=BytesIO(
+            b"CREATE TABLE population (region TEXT, population INTEGER);\n"
+            b"INSERT INTO population VALUES ('A', 10);\n"
+        ),
     )
 
 

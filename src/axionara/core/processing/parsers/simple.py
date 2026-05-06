@@ -114,6 +114,20 @@ class PdfParser(BaseParser):
         )
 
 
+class SqlParser(BaseParser):
+    def parse(self, dataset: DatasetAsset, content: bytes) -> ParsedResult:
+        text = content.decode("utf-8-sig", errors="replace")
+        return ParsedResult(
+            representation_type="document",
+            schema_snapshot={
+                "document_type": dataset.source_format,
+                "script_type": "sql",
+            },
+            extracted_text=text[:4000],
+            parser_notes=[f"statement_markers={text.count(';')}"],
+        )
+
+
 def get_parser(source_format: str) -> BaseParser:
     parser_map: dict[str, type[BaseParser]] = {
         "csv": CsvParser,
@@ -121,5 +135,6 @@ def get_parser(source_format: str) -> BaseParser:
         "xlsx": XlsxParser,
         "txt": TextParser,
         "pdf": PdfParser,
+        "sql": SqlParser,
     }
     return parser_map[source_format]()

@@ -10,6 +10,7 @@ class DatasetSourceFormat(StrEnum):
     JSON = "json"
     TXT = "txt"
     PDF = "pdf"
+    SQL = "sql"
 
 
 class DatasetAssetStatus(StrEnum):
