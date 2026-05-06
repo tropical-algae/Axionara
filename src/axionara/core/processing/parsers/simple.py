@@ -5,6 +5,7 @@ import json
 from openpyxl import load_workbook
 
 from axionara.core.db.models import DatasetAsset
+from axionara.core.processing.extractors import DocumentTextExtractor
 from axionara.core.processing.parsers.base import BaseParser
 from axionara.core.processing.types import ParsedResult
 
@@ -106,11 +107,28 @@ class TextParser(BaseParser):
 
 class PdfParser(BaseParser):
     def parse(self, dataset: DatasetAsset, content: bytes) -> ParsedResult:
-        _ = dataset, content
+        extraction = DocumentTextExtractor().extract(
+            filename=dataset.original_filename,
+            content=content,
+        )
         return ParsedResult(
             representation_type="document",
-            schema_snapshot={"document_type": "pdf"},
-            parser_notes=["pdf text extraction pending"],
+            parser_status=extraction.status,
+            schema_snapshot={
+                "document_type": "pdf",
+                "text_extraction": {
+                    "status": extraction.status,
+                    "engine": extraction.engine,
+                    "text_chars": extraction.text_chars,
+                    "truncated": extraction.truncated,
+                    "error_message": extraction.error_message,
+                },
+            },
+            extracted_text=extraction.text,
+            parser_notes=[
+                f"text_extraction_status={extraction.status}",
+                f"extractable_text_chars={extraction.text_chars}",
+            ],
         )
 
 

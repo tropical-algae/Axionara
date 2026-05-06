@@ -50,6 +50,7 @@ class StatisticsBuilder:
                 "document": None,
             }
         text_chars = len(parsed.extracted_text or "")
+        extraction = parsed.schema_snapshot.get("text_extraction", {})
         return {
             "common": common,
             "tabular": None,
@@ -57,6 +58,11 @@ class StatisticsBuilder:
             "document": {
                 "extractable_text_chars": text_chars,
                 "extractable_text_ratio": 1.0 if text_chars else 0.0,
+                "text_extraction_status": extraction.get(
+                    "status", "completed" if text_chars else "skipped"
+                ),
+                "text_extraction_engine": extraction.get("engine"),
+                "text_extraction_truncated": extraction.get("truncated", False),
             },
         }
 
@@ -212,6 +218,7 @@ class SummaryTagGenerator:
                 public_summary,
                 processing_summary,
                 cleaning_summary,
+                self._document_extraction_summary(statistics),
                 f"支持导出格式：{', '.join(allowed_formats)}",
             ]
         )
@@ -224,6 +231,18 @@ class SummaryTagGenerator:
             suggested_tags=suggested_tags,
             llm_output_json=None,
         )
+
+    def _document_extraction_summary(self, statistics: dict) -> str:
+        document = statistics.get("document")
+        if not isinstance(document, dict):
+            return ""
+        status = document.get("text_extraction_status", "skipped")
+        chars = document.get("extractable_text_chars", 0)
+        if status == "completed":
+            return f"文档文本提取状态：已完成，可提取字符数 {chars}。"
+        if status == "failed":
+            return "文档文本提取状态：失败，公开概况不包含原文内容。"
+        return "文档文本提取状态：未提取到可用文本。"
 
     def _generate_with_llm(
         self,

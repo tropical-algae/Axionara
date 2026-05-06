@@ -49,6 +49,8 @@ from axionara.core.processing.analyzers.simple import (
     SummaryTagGenerator,
 )
 from axionara.core.processing.cleaners.simple import RuleBasedCleaner
+from axionara.core.processing.extractors import DocumentExtractionResult
+from axionara.core.processing.extractors.document import DocumentTextExtractor
 from axionara.core.processing.types import ParsedResult, SummaryTagResult
 from tests.conftest import DataStore
 
@@ -313,8 +315,23 @@ def test_consumer_exports_acquired_dataset_as_sql(
 
 @pytest.mark.run(order=19)
 def test_pdf_analysis_skips_cleaning(
-    db_session: Session, data_store: DataStore, pdf_upload: UploadFile
+    db_session: Session,
+    data_store: DataStore,
+    pdf_upload: UploadFile,
+    monkeypatch: pytest.MonkeyPatch,
 ):
+    def fake_extract(self, filename: str, content: bytes) -> DocumentExtractionResult:
+        _ = self, filename, content
+        return DocumentExtractionResult(
+            text="PDF extracted public-review text",
+            status="completed",
+            engine="markitdown",
+        )
+
+    monkeypatch.setattr(
+        "axionara.core.processing.parsers.simple.DocumentTextExtractor.extract",
+        fake_extract,
+    )
     provider = select_user_by_username(db=db_session, username="provider_user")
     admin = select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
     assert provider is not None
@@ -340,7 +357,11 @@ def test_pdf_analysis_skips_cleaning(
 
     assert job.job_status == "succeeded"
     assert analysis.representation_type == "document"
+    assert analysis.parser_status == "completed"
     assert analysis.cleaning_status == "skipped"
+    assert analysis.statistics["document"]["text_extraction_status"] == "completed"
+    assert analysis.statistics["document"]["text_extraction_engine"] == "markitdown"
+    assert analysis.statistics["document"]["extractable_text_chars"] > 0
     assert analysis.export_capabilities["allowed_formats"] == ["raw"]
 
 
@@ -529,3 +550,58 @@ def test_rule_based_cleaner_profiles_tabular_quality():
     assert cleaned.normalized_data["columns"][0]["normalized_name"] == "region_name"
     assert statistics["tabular"]["duplicate_row_count"] == 1
     assert statistics["tabular"]["column_profiles"][1]["inferred_type"] == "integer"
+
+
+def test_document_text_extractor_handles_markitdown_result(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    class FakeConversionResult:
+        text_content = " extracted document text "
+
+    class FakeMarkItDown:
+        def __init__(self, enable_plugins: bool):
+            self.enable_plugins = enable_plugins
+
+        def convert_stream(self, stream, file_extension: str):
+            assert stream.read() == b"pdf-bytes"
+            assert file_extension == ".pdf"
+            return FakeConversionResult()
+
+    monkeypatch.setattr(
+        "axionara.core.processing.extractors.document.MarkItDown",
+        FakeMarkItDown,
+    )
+    result = DocumentTextExtractor(max_chars=10).extract(
+        filename="report.pdf",
+        content=b"pdf-bytes",
+    )
+
+    assert result.status == "completed"
+    assert result.engine == "markitdown"
+    assert result.text == "extracted "
+    assert result.truncated is True
+
+
+def test_document_text_extractor_handles_markitdown_failure(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    class FakeMarkItDown:
+        def __init__(self, enable_plugins: bool):
+            self.enable_plugins = enable_plugins
+
+        def convert_stream(self, stream, file_extension: str):
+            _ = stream, file_extension
+            raise RuntimeError("conversion failed")
+
+    monkeypatch.setattr(
+        "axionara.core.processing.extractors.document.MarkItDown",
+        FakeMarkItDown,
+    )
+    result = DocumentTextExtractor().extract(
+        filename="report.pdf",
+        content=b"pdf-bytes",
+    )
+
+    assert result.status == "failed"
+    assert result.text == ""
+    assert result.error_message == "conversion failed"
