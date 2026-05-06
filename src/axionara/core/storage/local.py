@@ -41,3 +41,16 @@ class LocalStorageService(StorageService):
         if normalized.is_absolute() or ".." in normalized.parts:
             raise ValueError("Invalid storage path")
         return (self.root_dir / normalized).resolve()
+
+    def health_check(self, buckets: list[str]) -> dict:
+        return {
+            "root_dir": str(self.root_dir),
+            "root_exists": self.root_dir.exists(),
+            "buckets": {
+                bucket: {
+                    "exists": (self.root_dir / bucket).exists(),
+                    "path": str(self.root_dir / bucket),
+                }
+                for bucket in buckets
+            },
+        }

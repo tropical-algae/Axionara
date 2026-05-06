@@ -33,3 +33,7 @@ class StorageService(ABC):
     @abstractmethod
     def stat_object(self, bucket: str, object_key: str) -> StoredObject:
         raise NotImplementedError
+
+    @abstractmethod
+    def health_check(self, buckets: list[str]) -> dict:
+        raise NotImplementedError

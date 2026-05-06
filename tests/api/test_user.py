@@ -10,8 +10,9 @@ from axionara.app.api.endpoints.auth import (
     login_access_token,
     user_register,
 )
-from axionara.app.api.endpoints.health import check_system_status
+from axionara.app.api.endpoints.health import check_storage_status, check_system_status
 from axionara.app.utils.security import verift_access_token
+from axionara.common.config import settings
 from axionara.core.model.base import SystemStatusType
 from axionara.core.model.user import ScopeType, TokenPayload, UserBasicInfo
 from tests.conftest import DataStore
@@ -48,6 +49,17 @@ TEMP_CONSUMER: dict = {
 def test_system_status():
     response = asyncio.run(check_system_status())
     assert response.status == SystemStatusType.HEALTH.value
+
+
+def test_storage_status_local_backend(monkeypatch: pytest.MonkeyPatch, tmp_path):
+    monkeypatch.setattr(settings, "STORAGE_BACKEND", "local")
+    monkeypatch.setattr(settings, "LOCAL_STORAGE_ROOT", str(tmp_path / "storage"))
+
+    response = asyncio.run(check_storage_status())
+
+    assert response.status == SystemStatusType.HEALTH.value
+    assert response.backend == "local"
+    assert response.details["root_exists"] is True
 
 
 @pytest.mark.run(order=2)

@@ -64,3 +64,15 @@ class MinioStorageService(StorageService):
     def ensure_bucket(self, bucket: str) -> None:
         if not self.client.bucket_exists(bucket_name=bucket):
             self.client.make_bucket(bucket_name=bucket)
+
+    def health_check(self, buckets: list[str]) -> dict:
+        bucket_status = {}
+        for bucket in buckets:
+            try:
+                bucket_status[bucket] = {
+                    "exists": self.client.bucket_exists(bucket_name=bucket),
+                    "error": None,
+                }
+            except Exception as err:  # noqa: PERF203
+                bucket_status[bucket] = {"exists": False, "error": str(err)}
+        return {"buckets": bucket_status}

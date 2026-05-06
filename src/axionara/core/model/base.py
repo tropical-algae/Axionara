@@ -11,3 +11,9 @@ class SystemStatusType(StrEnum):
 class SystemStatus(BaseModel):
     status: str
     version: str
+
+
+class StorageHealth(BaseModel):
+    status: str
+    backend: str
+    details: dict

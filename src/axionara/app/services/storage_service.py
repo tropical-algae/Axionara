@@ -13,3 +13,31 @@ def get_storage_service() -> StorageService:
         secret_key=settings.MINIO_SECRET_KEY,
         secure=settings.MINIO_SECURE,
     )
+
+
+def check_storage_health() -> dict:
+    buckets = [
+        settings.MINIO_BUCKET_RAW,
+        settings.MINIO_BUCKET_ANALYSIS,
+        settings.MINIO_BUCKET_ARTIFACTS,
+    ]
+    try:
+        service = get_storage_service()
+        details = service.health_check(buckets=buckets)
+        buckets_detail = details.get("buckets", {})
+        bucket_errors = [
+            bucket
+            for bucket, status in buckets_detail.items()
+            if status.get("error") is not None
+        ]
+        return {
+            "status": "unhealth" if bucket_errors else "health",
+            "backend": settings.STORAGE_BACKEND,
+            "details": details,
+        }
+    except Exception as err:
+        return {
+            "status": "unhealth",
+            "backend": settings.STORAGE_BACKEND,
+            "details": {"error": str(err)},
+        }
