@@ -162,6 +162,26 @@ class CatalogRagResponse(BaseModel):
     raw_content_used: bool = False
 
 
+class ContentRagRequest(BaseModel):
+    question: str
+    limit: int = 5
+
+
+class ContentRagMatch(BaseModel):
+    dataset_id: str
+    chunk_id: str
+    score: float
+    snippet: str
+
+
+class ContentRagResponse(BaseModel):
+    question: str
+    answer: str
+    matches: list[ContentRagMatch]
+    source_scope: str = "authorized_dataset_content"
+    raw_content_used: bool = True
+
+
 class AccessGrantRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -6,6 +6,7 @@ from sqlmodel import Session
 
 from axionara.app.api.deps import get_current_user, get_db
 from axionara.app.services.access_service import AccessService
+from axionara.app.services.content_rag_service import AuthorizedContentRagService
 from axionara.app.services.export_service import (
     ExportService,
     process_export_job_background,
@@ -13,6 +14,8 @@ from axionara.app.services.export_service import (
 from axionara.core.db.models import UserAccount
 from axionara.core.model.dataset import (
     AccessGrantRead,
+    ContentRagRequest,
+    ContentRagResponse,
     DatasetAssetRead,
     DatasetProfileRead,
     ExportJobRead,
@@ -41,6 +44,24 @@ async def my_datasets(
         )
         for grant, dataset, profile, tags in rows
     ]
+
+
+@router.post("/datasets/{dataset_id}/ask", response_model=ContentRagResponse)
+async def ask_my_dataset_content(
+    dataset_id: str,
+    request: ContentRagRequest,
+    current_user: UserAccount = Security(
+        get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
+    ),
+    db: Session = Depends(get_db),
+) -> Any:
+    return AuthorizedContentRagService().ask(
+        db=db,
+        dataset_id=dataset_id,
+        question=request.question,
+        user=current_user,
+        limit=request.limit,
+    )
 
 
 @router.post("/datasets/{dataset_id}/exports", response_model=ExportJobRead)

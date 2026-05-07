@@ -26,6 +26,7 @@ from axionara.app.api.endpoints.catalog import (
     list_catalog_tags,
 )
 from axionara.app.api.endpoints.me import (
+    ask_my_dataset_content,
     download_my_export,
     my_datasets,
     my_export_job_detail,
@@ -49,6 +50,7 @@ from axionara.core.db.crud import (
 from axionara.core.db.models import DatasetAsset
 from axionara.core.model.dataset import (
     CatalogRagRequest,
+    ContentRagRequest,
     ExportFormat,
     ExportRequest,
     ReviewRequest,
@@ -325,6 +327,29 @@ def test_my_datasets_lists_acquired_dataset(db_session: Session, data_store: Dat
 
 
 @pytest.mark.run(order=20)
+def test_consumer_asks_acquired_dataset_content(
+    db_session: Session, data_store: DataStore
+):
+    consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+    assert consumer is not None
+
+    response = asyncio.run(
+        ask_my_dataset_content(
+            dataset_id=data_store.uploaded_dataset_id,
+            request=ContentRagRequest(question="A 地区的人口是多少？"),
+            current_user=consumer,
+            db=db_session,
+        )
+    )
+
+    assert response.raw_content_used is True
+    assert response.source_scope == "authorized_dataset_content"
+    assert response.matches
+    assert "A" in response.answer
+    assert "10" in response.answer
+
+
+@pytest.mark.run(order=21)
 def test_consumer_exports_acquired_dataset_as_sql(
     db_session: Session, data_store: DataStore
 ):
@@ -363,7 +388,7 @@ def test_consumer_exports_acquired_dataset_as_sql(
     assert b"INSERT INTO `population`" in download.body
 
 
-@pytest.mark.run(order=21)
+@pytest.mark.run(order=22)
 def test_consumer_retries_failed_export_job(db_session: Session, data_store: DataStore):
     consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
     assert consumer is not None
@@ -395,7 +420,7 @@ def test_consumer_retries_failed_export_job(db_session: Session, data_store: Dat
     assert processed.job_status == "succeeded"
 
 
-@pytest.mark.run(order=22)
+@pytest.mark.run(order=23)
 def test_pdf_analysis_skips_cleaning(
     db_session: Session,
     data_store: DataStore,
@@ -447,7 +472,7 @@ def test_pdf_analysis_skips_cleaning(
     assert analysis.export_capabilities["allowed_formats"] == ["raw"]
 
 
-@pytest.mark.run(order=23)
+@pytest.mark.run(order=24)
 def test_xlsx_analysis_and_export(
     db_session: Session, data_store: DataStore, xlsx_upload: UploadFile
 ):
@@ -520,7 +545,7 @@ def test_xlsx_analysis_and_export(
     assert b'"region": "A"' in download.body
 
 
-@pytest.mark.run(order=24)
+@pytest.mark.run(order=25)
 def test_sql_upload_analysis_keeps_raw_only(
     db_session: Session, data_store: DataStore, sql_upload: UploadFile
 ):
@@ -554,7 +579,7 @@ def test_sql_upload_analysis_keeps_raw_only(
     assert analysis.export_capabilities["allowed_formats"] == ["raw"]
 
 
-@pytest.mark.run(order=25)
+@pytest.mark.run(order=26)
 def test_admin_archives_published_dataset(db_session: Session, data_store: DataStore):
     admin = select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
     assert admin is not None
