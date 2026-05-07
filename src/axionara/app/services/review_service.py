@@ -8,6 +8,7 @@ from axionara.common.util import generate_random_token
 from axionara.core.db.crud import (
     insert_dataset_review,
     select_dataset_by_id,
+    select_dataset_reviews,
     select_latest_dataset_analysis,
     select_latest_dataset_review,
     update_dataset_asset,
@@ -97,6 +98,52 @@ class ReviewService:
         dataset.status = DatasetAssetStatus.PUBLISHED.value
         update_dataset_asset(db=db, dataset=dataset)
         return update_dataset_review(db=db, review=review)
+
+    def archive_dataset(
+        self,
+        db: Session,
+        dataset_id: str,
+        reviewer: UserAccount,
+        comment: str | None = None,
+    ) -> DatasetReview:
+        dataset = select_dataset_by_id(db=db, dataset_id=dataset_id)
+        if dataset is None:
+            raise HTTPException(**CONSTANT.RESP_DATASET_NOT_EXISTS)
+        if dataset.status not in {
+            DatasetAssetStatus.PUBLISHED.value,
+            DatasetAssetStatus.REJECTED.value,
+        }:
+            raise HTTPException(**CONSTANT.RESP_DATASET_NOT_ARCHIVABLE)
+        analysis = select_latest_dataset_analysis(db=db, dataset_id=dataset_id)
+        if analysis is None:
+            raise HTTPException(**CONSTANT.RESP_ANALYSIS_NOT_EXISTS)
+
+        dataset.status = DatasetAssetStatus.ARCHIVED.value
+        update_dataset_asset(db=db, dataset=dataset)
+        return insert_dataset_review(
+            db=db,
+            review=DatasetReview(
+                id=generate_random_token(prefix="REV", length=24),
+                dataset_id=dataset_id,
+                analysis_id=analysis.id,
+                reviewer_id=reviewer.id,
+                review_status="archived",
+                review_comment=comment,
+                reviewed_at=datetime.now(),
+            ),
+        )
+
+    def list_reviews(
+        self,
+        db: Session,
+        dataset_id: str | None = None,
+        review_status: str | None = None,
+    ) -> list[DatasetReview]:
+        return select_dataset_reviews(
+            db=db,
+            dataset_id=dataset_id,
+            review_status=review_status,
+        )
 
     def _get_dataset_for_review(self, db: Session, dataset_id: str):
         dataset = select_dataset_by_id(db=db, dataset_id=dataset_id)

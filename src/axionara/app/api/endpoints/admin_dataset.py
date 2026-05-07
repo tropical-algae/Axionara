@@ -89,6 +89,23 @@ async def analysis_job_detail(
     return AnalysisOrchestrator().get_analysis_job(db=db, job_id=job_id)
 
 
+@router.get("/reviews", response_model=list[DatasetReviewRead])
+async def dataset_reviews(
+    dataset_id: str | None = None,
+    review_status: str | None = None,
+    current_user: UserAccount = Security(
+        get_current_user, scopes=[ScopeType.ADMIN.value]
+    ),
+    db: Session = Depends(get_db),
+) -> Any:
+    _ = current_user
+    return ReviewService().list_reviews(
+        db=db,
+        dataset_id=dataset_id,
+        review_status=review_status,
+    )
+
+
 @router.post("/analysis-jobs/{job_id}/retry", response_model=AnalysisJobRead)
 async def retry_analysis_job(
     job_id: str,
@@ -164,5 +181,22 @@ async def publish_dataset(
         db=db,
         dataset_id=dataset_id,
         publisher=current_user,
+        comment=request.comment if request else None,
+    )
+
+
+@router.post("/datasets/{dataset_id}/archive", response_model=DatasetReviewRead)
+async def archive_dataset(
+    dataset_id: str,
+    request: ReviewRequest | None = None,
+    current_user: UserAccount = Security(
+        get_current_user, scopes=[ScopeType.ADMIN.value]
+    ),
+    db: Session = Depends(get_db),
+) -> Any:
+    return ReviewService().archive_dataset(
+        db=db,
+        dataset_id=dataset_id,
+        reviewer=current_user,
         comment=request.comment if request else None,
     )

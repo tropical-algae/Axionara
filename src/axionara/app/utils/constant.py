@@ -100,6 +100,10 @@ class Constant(BaseSettings):
         "status_code": status.HTTP_400_BAD_REQUEST,
         "detail": "当前数据资产尚未通过审核，不能发布",
     }
+    RESP_DATASET_NOT_ARCHIVABLE: dict = {
+        "status_code": status.HTTP_400_BAD_REQUEST,
+        "detail": "当前数据资产不能归档",
+    }
     RESP_ACCESS_GRANT_NOT_EXISTS: dict = {
         "status_code": status.HTTP_404_NOT_FOUND,
         "detail": "数据授权记录不存在",

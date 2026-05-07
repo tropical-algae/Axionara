@@ -65,6 +65,25 @@ def update_dataset_review(db: Session, review: DatasetReview) -> DatasetReview:
     return review
 
 
+def select_dataset_review_by_id(db: Session, review_id: str) -> DatasetReview | None:
+    result = db.exec(select(DatasetReview).where(DatasetReview.id == review_id))
+    return result.first()
+
+
+def select_dataset_reviews(
+    db: Session,
+    dataset_id: str | None = None,
+    review_status: str | None = None,
+) -> list[DatasetReview]:
+    statement = select(DatasetReview)
+    if dataset_id is not None:
+        statement = statement.where(DatasetReview.dataset_id == dataset_id)
+    if review_status is not None:
+        statement = statement.where(DatasetReview.review_status == review_status)
+    result = db.exec(statement.order_by(DatasetReview.create_date.desc()))
+    return list(result.all())
+
+
 def select_latest_dataset_review(db: Session, dataset_id: str) -> DatasetReview | None:
     result = db.exec(
         select(DatasetReview)
