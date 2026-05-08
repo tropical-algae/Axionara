@@ -1,4 +1,5 @@
 import asyncio
+from datetime import date
 
 import pytest
 from fastapi import BackgroundTasks, UploadFile
@@ -80,6 +81,17 @@ def test_provider_dataset_upload(
             title="Population Dataset",
             description="Demo csv upload",
             file=csv_upload,
+            category="人口统计",
+            source_organization="统计局",
+            coverage_start=date(2024, 1, 1),
+            coverage_end=date(2024, 12, 31),
+            update_frequency="monthly",
+            sensitivity_level="internal",
+            intended_visibility="market_after_review",
+            access_policy="approval_required",
+            usage_restrictions="仅用于研究分析",
+            contact_name="Provider User",
+            contact_email="provider@test.com",
             current_user=user,
             db=db_session,
         )
@@ -87,6 +99,16 @@ def test_provider_dataset_upload(
 
     assert response.source_format == "csv"
     assert response.status == "uploaded"
+    assert response.category == "人口统计"
+    assert response.source_organization == "统计局"
+    assert response.coverage_start == date(2024, 1, 1)
+    assert response.coverage_end == date(2024, 12, 31)
+    assert response.update_frequency == "monthly"
+    assert response.sensitivity_level == "internal"
+    assert response.intended_visibility == "market_after_review"
+    assert response.access_policy == "approval_required"
+    assert response.usage_restrictions == "仅用于研究分析"
+    assert response.contact_email == "provider@test.com"
     data_store.uploaded_dataset_id = response.id
 
 
@@ -251,6 +273,10 @@ def test_catalog_lists_published_dataset(db_session: Session, data_store: DataSt
 
     assert any(row.dataset.id == data_store.uploaded_dataset_id for row in rows)
     assert detail.dataset.id == data_store.uploaded_dataset_id
+    assert detail.dataset.category == "人口统计"
+    assert detail.dataset.source_organization == "统计局"
+    assert detail.dataset.update_frequency == "monthly"
+    assert detail.dataset.access_policy == "approval_required"
     assert "csv" in detail.tags
     assert any(tag.slug == "csv" for tag in tags)
 
@@ -322,6 +348,8 @@ def test_my_datasets_lists_acquired_dataset(db_session: Session, data_store: Dat
 
     assert len(rows) == 1
     assert rows[0].dataset.id == data_store.uploaded_dataset_id
+    assert rows[0].dataset.sensitivity_level == "internal"
+    assert rows[0].dataset.contact_email == "provider@test.com"
     assert rows[0].grant.grant_status == "granted"
     assert "csv" in rows[0].tags
 
