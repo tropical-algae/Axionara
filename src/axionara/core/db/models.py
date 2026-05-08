@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import (
     JSON,
@@ -6,6 +6,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
+    Date,
     Float,
     Index,
     Integer,
@@ -87,6 +88,37 @@ class DatasetAsset(SQLModel, table=True):
     id: str = Field(sa_column=Column("id", String(32), primary_key=True))
     title: str = Field(sa_column=Column("title", String(128)))
     description: str | None = Field(default=None, sa_column=Column("description", Text))
+    category: str | None = Field(default=None, sa_column=Column("category", String(64)))
+    source_organization: str | None = Field(
+        default=None, sa_column=Column("source_organization", String(128))
+    )
+    coverage_start: date | None = Field(
+        default=None, sa_column=Column("coverage_start", Date)
+    )
+    coverage_end: date | None = Field(
+        default=None, sa_column=Column("coverage_end", Date)
+    )
+    update_frequency: str | None = Field(
+        default=None, sa_column=Column("update_frequency", String(32))
+    )
+    sensitivity_level: str | None = Field(
+        default=None, sa_column=Column("sensitivity_level", String(32))
+    )
+    intended_visibility: str | None = Field(
+        default=None, sa_column=Column("intended_visibility", String(32))
+    )
+    access_policy: str | None = Field(
+        default=None, sa_column=Column("access_policy", String(32))
+    )
+    usage_restrictions: str | None = Field(
+        default=None, sa_column=Column("usage_restrictions", Text)
+    )
+    contact_name: str | None = Field(
+        default=None, sa_column=Column("contact_name", String(64))
+    )
+    contact_email: str | None = Field(
+        default=None, sa_column=Column("contact_email", String(128))
+    )
     owner_id: str = Field(sa_column=Column("owner_id", String(32)))
     source_format: str = Field(sa_column=Column("source_format", String(16)))
     representation_hint: str | None = Field(

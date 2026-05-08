@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
@@ -28,6 +28,17 @@ class DatasetAssetRead(BaseModel):
     id: str
     title: str
     description: str | None = None
+    category: str | None = None
+    source_organization: str | None = None
+    coverage_start: date | None = None
+    coverage_end: date | None = None
+    update_frequency: str | None = None
+    sensitivity_level: str | None = None
+    intended_visibility: str | None = None
+    access_policy: str | None = None
+    usage_restrictions: str | None = None
+    contact_name: str | None = None
+    contact_email: str | None = None
     owner_id: str
     source_format: str
     representation_hint: str | None = None
