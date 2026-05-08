@@ -1,3 +1,4 @@
+from datetime import date
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
@@ -31,6 +32,17 @@ async def create_dataset_asset(
     title: str,
     description: str | None,
     upload_file: UploadFile,
+    category: str | None = None,
+    source_organization: str | None = None,
+    coverage_start: date | None = None,
+    coverage_end: date | None = None,
+    update_frequency: str | None = None,
+    sensitivity_level: str | None = None,
+    intended_visibility: str | None = None,
+    access_policy: str | None = None,
+    usage_restrictions: str | None = None,
+    contact_name: str | None = None,
+    contact_email: str | None = None,
 ) -> DatasetAsset:
     source_format = detect_source_format(upload_file.filename)
     dataset_id = generate_random_token(prefix="DAT", length=24)
@@ -51,6 +63,17 @@ async def create_dataset_asset(
         id=dataset_id,
         title=title,
         description=description,
+        category=category,
+        source_organization=source_organization,
+        coverage_start=coverage_start,
+        coverage_end=coverage_end,
+        update_frequency=update_frequency,
+        sensitivity_level=sensitivity_level,
+        intended_visibility=intended_visibility,
+        access_policy=access_policy,
+        usage_restrictions=usage_restrictions,
+        contact_name=contact_name,
+        contact_email=contact_email,
         owner_id=owner.id,
         source_format=source_format,
         original_filename=original_filename,

@@ -1,4 +1,5 @@
-from typing import Any
+from datetime import date
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, Form, Security, UploadFile
 from sqlmodel import Session
@@ -18,9 +19,20 @@ router = APIRouter()
 
 @router.post("/datasets/upload", response_model=DatasetAssetRead)
 async def upload_dataset(
-    title: str = Form(...),
-    description: str | None = Form(default=None),
-    file: UploadFile = File(...),
+    title: Annotated[str, Form()],
+    file: Annotated[UploadFile, File()],
+    description: Annotated[str | None, Form()] = None,
+    category: Annotated[str | None, Form()] = None,
+    source_organization: Annotated[str | None, Form()] = None,
+    coverage_start: Annotated[date | None, Form()] = None,
+    coverage_end: Annotated[date | None, Form()] = None,
+    update_frequency: Annotated[str | None, Form()] = None,
+    sensitivity_level: Annotated[str | None, Form()] = None,
+    intended_visibility: Annotated[str | None, Form()] = None,
+    access_policy: Annotated[str | None, Form()] = None,
+    usage_restrictions: Annotated[str | None, Form()] = None,
+    contact_name: Annotated[str | None, Form()] = None,
+    contact_email: Annotated[str | None, Form()] = None,
     current_user: UserAccount = Security(
         get_current_user, scopes=[ScopeType.PROVIDER.value, ScopeType.ADMIN.value]
     ),
@@ -32,6 +44,17 @@ async def upload_dataset(
         title=title,
         description=description,
         upload_file=file,
+        category=category,
+        source_organization=source_organization,
+        coverage_start=coverage_start,
+        coverage_end=coverage_end,
+        update_frequency=update_frequency,
+        sensitivity_level=sensitivity_level,
+        intended_visibility=intended_visibility,
+        access_policy=access_policy,
+        usage_restrictions=usage_restrictions,
+        contact_name=contact_name,
+        contact_email=contact_email,
     )
 
 
