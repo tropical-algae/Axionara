@@ -54,8 +54,13 @@ class ServiceSetting(BaseSettings):
     GPT_TEMPERATURE: float = 0.8
 
     AGENT_MEMORY_SQL_TABLE: str = "chat_memory"
-    AGENT_SYS_PROMPT_SUFFIX: str = ""
+
     AGENT_OPTIONAL_MODELS: list[str] = ["gpt-5-nano"]
+
+
+class PromptSetting(BaseSettings):
+    PROMPT_ROOT_PATH: str = "prompts"
+    AGENT_SYSTEM_PROMPT_PATH: str = "agent/system.md"
 
 
 class StorageSetting(BaseSettings):
@@ -70,7 +75,14 @@ class StorageSetting(BaseSettings):
     MINIO_BUCKET_ARTIFACTS: str = "axionara-artifacts"
 
 
-class Setting(SysSetting, BasicSetting, LogSetting, ServiceSetting, StorageSetting):
+class Setting(
+    SysSetting,
+    BasicSetting,
+    LogSetting,
+    ServiceSetting,
+    PromptSetting,
+    StorageSetting,
+):
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,
         case_sensitive=True,

@@ -6,6 +6,7 @@ from axionara.app.utils.constant import CONSTANT
 from axionara.common.config import settings
 from axionara.common.logging import logger
 from axionara.core.agent.base import AgentBase
+from axionara.core.prompt import load_agent_system_prompt
 
 T = TypeVar("T", bound=AgentBase)
 
@@ -23,7 +24,7 @@ class AgentFactory:
                 api_key=settings.GPT_API_KEY,
                 api_base=settings.GPT_BASE_URL,
                 default_model=model,
-                system_prompt=settings.AGENT_SYS_PROMPT_SUFFIX,
+                system_prompt=load_agent_system_prompt(),
             )
 
         return cast(T, self.agents[model])
