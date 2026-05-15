@@ -61,6 +61,8 @@ class ServiceSetting(BaseSettings):
 class PromptSetting(BaseSettings):
     PROMPT_ROOT_PATH: str = "prompts"
     AGENT_SYSTEM_PROMPT_PATH: str = "agent/system.md"
+    AGENT_DATA_QA_PROMPT_PATH: str = "agent/data_qa.md"
+    AGENT_DATA_QA_REQUEST_PROMPT_PATH: str = "agent/data_qa_request.md"
 
 
 class StorageSetting(BaseSettings):
