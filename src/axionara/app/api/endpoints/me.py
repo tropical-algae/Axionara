@@ -55,7 +55,7 @@ async def ask_my_dataset_content(
     ),
     db: Session = Depends(get_db),
 ) -> Any:
-    return AuthorizedContentRagService().ask(
+    return await AuthorizedContentRagService().ask(
         db=db,
         dataset_id=dataset_id,
         question=request.question,

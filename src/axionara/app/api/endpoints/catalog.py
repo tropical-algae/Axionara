@@ -72,7 +72,7 @@ async def ask_catalog_dataset_profiles(
     request: CatalogRagRequest,
     db: Session = Depends(get_db),
 ) -> Any:
-    return CatalogRagService().ask(
+    return await CatalogRagService().ask(
         db=db,
         question=request.question,
         dataset_id=request.dataset_id,
@@ -87,7 +87,7 @@ async def ask_catalog_dataset_profile(
     request: CatalogRagRequest,
     db: Session = Depends(get_db),
 ) -> Any:
-    return CatalogRagService().ask(
+    return await CatalogRagService().ask(
         db=db,
         question=request.question,
         dataset_id=dataset_id,
