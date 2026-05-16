@@ -3,7 +3,7 @@ from fastapi.responses import StreamingResponse
 
 from axionara.app.api.deps import get_agent_query, get_session_id
 from axionara.app.services.inference_service import agent_response, agent_stream_response
-from axionara.common.config import settings
+from axionara.core.agent.factory import agent_factory
 from axionara.core.model.message import AgentResponse, ChatCompleteRequest
 from axionara.core.model.user import ScopeType
 
@@ -12,7 +12,7 @@ router = APIRouter()
 
 @router.get("/list")
 async def get_agent_models() -> list[str]:
-    return settings.AGENT_OPTIONAL_MODELS
+    return agent_factory.get_supported_models()
 
 
 @router.post("/chat", response_model=AgentResponse, response_model_exclude={"tools_call"})
