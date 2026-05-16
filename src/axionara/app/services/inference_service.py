@@ -8,10 +8,16 @@ from axionara.app.utils.constant import CONSTANT
 from axionara.common.logging import logger
 from axionara.common.util import async_db_wrapper
 from axionara.core.agent.agent import MyAgent
+from axionara.core.agent.context import (
+    DATASET_QA_TOOL_INFO_NAMES,
+    DatasetQaToolContext,
+    dataset_qa_tool_context,
+)
 from axionara.core.agent.factory import agent_factory
 from axionara.core.agent.store import agent_store
 from axionara.core.db.crud.session_crud import delete_session
 from axionara.core.model.message import AgentResponse, ChatCompleteRequest
+from axionara.core.prompt import load_prompt
 
 
 async def agent_stream_response(
@@ -84,3 +90,26 @@ async def agent_response(
             )
             await async_db_wrapper(delete_session, session_id=chat_request.session_id)
         raise
+
+
+async def dataset_qa_agent_response(
+    message: str,
+    context: DatasetQaToolContext,
+    model: str,
+    system_prompt_path: str,
+) -> AgentResponse:
+    blocked_tools = [
+        tool_name
+        for tool_name in agent_store.get_tool_names()
+        if tool_name not in DATASET_QA_TOOL_INFO_NAMES
+    ]
+    tools: list = agent_store.get_tools(blocked_tools=blocked_tools)
+    agent: MyAgent = agent_factory.get_agent(
+        agent=MyAgent,
+        model=model,
+        system_prompt=load_prompt(system_prompt_path),
+        cache_key="dataset_qa",
+    )
+    logger.info(f"Dataset QA agent run without Memory, {len(tools)} Tools")
+    with dataset_qa_tool_context(context):
+        return await agent.run(message=message, memory=None, tools=tools)
