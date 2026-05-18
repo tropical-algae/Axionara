@@ -1,5 +1,7 @@
 import asyncio
+import json
 from datetime import date
+from types import SimpleNamespace
 
 import pytest
 from fastapi import BackgroundTasks, UploadFile
@@ -65,6 +67,37 @@ from axionara.core.processing.extractors import DocumentExtractionResult
 from axionara.core.processing.extractors.document import DocumentTextExtractor
 from axionara.core.processing.types import ParsedResult, SummaryTagResult
 from tests.conftest import DataStore
+
+
+class FakeDatasetQaAgent:
+    async def run(self, message, tools, memory=None, **kwargs):
+        _ = memory, kwargs
+        tool_map = {tool.__tool_name__: tool for tool in tools}
+        if "authorized_dataset_content" in message:
+            payload = await tool_map[
+                "search_authorized_dataset_content"
+            ].a_tool_function()
+        elif "public_dataset_profile" in message:
+            payload = await tool_map["get_public_dataset_profile"].a_tool_function()
+        else:
+            payload = await tool_map["search_public_dataset_profiles"].a_tool_function()
+
+        data = json.loads(payload)
+        matches = data.get("matches", [])
+        if not matches:
+            return SimpleNamespace(content="没有找到匹配的数据。")
+        answer = "\n".join(match["material"] for match in matches)
+        return SimpleNamespace(content=answer)
+
+
+def patch_dataset_qa_agent(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_get_agent(*_args, **_kwargs):
+        return FakeDatasetQaAgent()
+
+    monkeypatch.setattr(
+        "axionara.app.services.inference_service.agent_factory.get_agent",
+        fake_get_agent,
+    )
 
 
 @pytest.mark.run(order=7)
@@ -288,7 +321,11 @@ def test_catalog_tag_filter(db_session: Session, data_store: DataStore):
 
 
 @pytest.mark.run(order=17)
-def test_catalog_public_profile_rag_answer(db_session: Session, data_store: DataStore):
+def test_catalog_public_profile_rag_answer(
+    db_session: Session, data_store: DataStore, monkeypatch: pytest.MonkeyPatch
+):
+    patch_dataset_qa_agent(monkeypatch)
+
     response = asyncio.run(
         ask_catalog_dataset_profiles(
             request=CatalogRagRequest(question="这个人口数据支持什么导出格式？"),
@@ -356,8 +393,10 @@ def test_my_datasets_lists_acquired_dataset(db_session: Session, data_store: Dat
 
 @pytest.mark.run(order=20)
 def test_consumer_asks_acquired_dataset_content(
-    db_session: Session, data_store: DataStore
+    db_session: Session, data_store: DataStore, monkeypatch: pytest.MonkeyPatch
 ):
+    patch_dataset_qa_agent(monkeypatch)
+
     consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
     assert consumer is not None
 
