@@ -39,6 +39,8 @@ async function parseError(response: Response): Promise<never> {
   const message =
     typeof detail === "object" && detail && "detail" in detail
       ? String((detail as { detail: unknown }).detail)
+      : typeof detail === "object" && detail && "message" in detail
+        ? String((detail as { message: unknown }).message)
       : response.statusText;
   throw new ApiError(message || "Request failed", response.status, detail);
 }
