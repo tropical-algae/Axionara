@@ -2,8 +2,10 @@ import os
 from pathlib import Path
 
 TEMP_SQLITE_FILEPATH: Path = Path("cache") / "temp_sqlite.db"
+TEMP_STORAGE_ROOT: Path = Path("cache") / "test_storage"
 os.environ["SQL_DATABASE_URI"] = f"sqlite+aiosqlite:///{TEMP_SQLITE_FILEPATH}"
 os.environ["STORAGE_BACKEND"] = "local"
+os.environ["LOCAL_STORAGE_ROOT"] = str(TEMP_STORAGE_ROOT)
 
 if TEMP_SQLITE_FILEPATH.exists():
     TEMP_SQLITE_FILEPATH.unlink()
