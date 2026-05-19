@@ -4,7 +4,7 @@
   </button>
 
   <Teleport to="body">
-    <div v-show="ui.copilotOpen" ref="overlayRef" class="copilot-overlay" @click.self="close">
+    <div v-if="renderCopilot" ref="overlayRef" class="copilot-overlay" @click.self="close">
       <aside ref="drawerRef" class="copilot-drawer">
         <header>
           <div>
@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import gsap from "gsap";
 import { MessageCircle, Send, X } from "lucide-vue-next";
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 
 import { useCatalogStore } from "@/stores/catalog";
 import { useMeStore } from "@/stores/me";
@@ -48,6 +48,8 @@ const me = useMeStore();
 const overlayRef = ref<HTMLElement | null>(null);
 const drawerRef = ref<HTMLElement | null>(null);
 const buttonRef = ref<HTMLElement | null>(null);
+const renderCopilot = ref(ui.copilotOpen);
+let copilotTimeline: gsap.core.Timeline | null = null;
 const draft = ref("");
 const sending = ref(false);
 const messages = ref([
@@ -91,15 +93,32 @@ async function send() {
 watch(
   () => ui.copilotOpen,
   async (openNow) => {
-    await nextTick();
-    if (!overlayRef.value || !drawerRef.value) return;
+    copilotTimeline?.kill();
     if (openNow) {
-      gsap.fromTo(overlayRef.value, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.28, ease: "power2.out" });
-      gsap.fromTo(drawerRef.value, { xPercent: 105 }, { xPercent: 0, duration: 0.62, ease: "expo.out" });
-    } else {
+      renderCopilot.value = true;
+      await nextTick();
+      if (!overlayRef.value || !drawerRef.value) return;
       gsap.set(overlayRef.value, { autoAlpha: 0 });
-      gsap.set(drawerRef.value, { xPercent: 105 });
+      gsap.set(drawerRef.value, { xPercent: 100, force3D: true });
+      copilotTimeline = gsap
+        .timeline()
+        .to(overlayRef.value, { autoAlpha: 1, duration: 0.16, ease: "power1.out" }, 0)
+        .to(drawerRef.value, { xPercent: 0, duration: 0.34, ease: "power3.out", force3D: true }, 0);
+      return;
     }
+
+    if (!overlayRef.value || !drawerRef.value) {
+      renderCopilot.value = false;
+      return;
+    }
+    copilotTimeline = gsap
+      .timeline({
+        onComplete: () => {
+          renderCopilot.value = false;
+        }
+      })
+      .to(drawerRef.value, { xPercent: 100, duration: 0.24, ease: "power2.in", force3D: true }, 0)
+      .to(overlayRef.value, { autoAlpha: 0, duration: 0.2, ease: "power1.out" }, 0);
   }
 );
 
@@ -109,4 +128,8 @@ watch(
     messages.value = [{ id: crypto.randomUUID(), role: "assistant", text: `当前范围已切换为：${title.value}。` }];
   }
 );
+
+onBeforeUnmount(() => {
+  copilotTimeline?.kill();
+});
 </script>

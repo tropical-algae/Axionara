@@ -148,8 +148,6 @@ button:disabled {
   border-bottom: 1px solid rgba(184, 220, 230, 0.55);
   background: rgba(255, 255, 255, 0.68);
   box-shadow: 0 14px 36px rgba(22, 32, 51, 0.08);
-  backdrop-filter: blur(22px) saturate(1.35);
-  -webkit-backdrop-filter: blur(22px) saturate(1.35);
 }
 
 .brand,
@@ -1513,8 +1511,8 @@ label select {
   z-index: 50;
   display: flex;
   justify-content: flex-end;
-  background: rgba(23, 32, 51, 0.28);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.24);
+  will-change: opacity;
 }
 
 .copilot-drawer {
@@ -1526,6 +1524,8 @@ label select {
   border-left: 1px solid var(--line);
   background: #fff;
   box-shadow: -28px 0 70px rgba(22, 32, 51, 0.16);
+  contain: layout paint;
+  will-change: transform;
 }
 
 .copilot-drawer header {
@@ -1568,7 +1568,7 @@ label select {
   gap: 14px;
   overflow: auto;
   padding: 22px;
-  background: var(--surface-soft);
+  background: #f6f7f9;
 }
 
 .messages article {
@@ -1582,8 +1582,8 @@ label select {
 
 .messages article.user {
   justify-self: end;
-  border-color: rgba(22, 122, 154, 0.22);
-  background: var(--surface-tint);
+  border-color: rgba(23, 32, 51, 0.16);
+  background: #f0f2f5;
 }
 
 .messages article span {
@@ -1640,7 +1640,6 @@ label select {
   display: grid;
   place-items: center;
   background: rgba(23, 32, 51, 0.32);
-  backdrop-filter: blur(4px);
 }
 
 .modal-panel {
