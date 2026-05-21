@@ -1,13 +1,37 @@
-const API_PREFIX = "/api/v1";
+import axios, {
+  type AxiosError,
+  type AxiosRequestConfig,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig
+} from "axios";
 
-type QueryValue = string | number | boolean | null | undefined;
-type Query = Record<string, QueryValue> | object;
+interface BackendErrorResponse {
+  status?: number | string;
+  message?: string;
+  detail?: string;
+  data?: unknown;
+}
+
+export interface RequestConfig<Data = unknown> extends AxiosRequestConfig<Data> {
+  suppressErrorToast?: boolean;
+}
+
+export interface RequestError {
+  status: number | string;
+  message: string;
+  raw: unknown;
+  response?: BackendErrorResponse;
+}
+
+type RequestErrorHandler = (error: RequestError) => void;
+
+let requestErrorHandler: RequestErrorHandler | null = null;
 
 export class ApiError extends Error {
-  status: number;
+  status: number | string;
   detail: unknown;
 
-  constructor(message: string, status: number, detail: unknown) {
+  constructor(message: string, status: number | string, detail: unknown) {
     super(message);
     this.name = "ApiError";
     this.status = status;
@@ -15,70 +39,98 @@ export class ApiError extends Error {
   }
 }
 
+function normalizeBaseUrl(baseUrl: string): string {
+  const normalized = baseUrl.trim();
+  if (!normalized || normalized === "/") return "/";
+  return normalized.replace(/\/+$/, "");
+}
+
 function token(): string | null {
   return localStorage.getItem("axionara.token");
 }
 
-function buildUrl(path: string, query?: Query): string {
-  const url = new URL(`${API_PREFIX}${path}`, window.location.origin);
-  Object.entries(query ?? {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      url.searchParams.set(key, String(value));
+function isBackendErrorResponse(value: unknown): value is BackendErrorResponse {
+  return Boolean(value && typeof value === "object" && ("message" in value || "detail" in value || "status" in value));
+}
+
+export const setRequestErrorHandler = (handler: RequestErrorHandler | null) => {
+  requestErrorHandler = handler;
+};
+
+export const normalizeRequestError = (error: unknown): RequestError => {
+  if (!axios.isAxiosError(error)) {
+    return {
+      status: "UNKNOWN",
+      message: error instanceof Error ? error.message : "Request failed",
+      raw: error
+    };
+  }
+
+  const axiosError = error as AxiosError<BackendErrorResponse>;
+  const response = isBackendErrorResponse(axiosError.response?.data) ? axiosError.response.data : undefined;
+  const status = response?.status ?? axiosError.response?.status ?? axiosError.code ?? "UNKNOWN";
+  const message = response?.message ?? response?.detail ?? axiosError.message ?? "Request failed";
+
+  return {
+    status,
+    message,
+    raw: error,
+    response
+  };
+};
+
+const service = axios.create({
+  baseURL: normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL || "/"),
+  timeout: 10000,
+  withCredentials: true
+});
+
+service.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const accessToken = token();
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
-  });
-  return url.pathname + url.search;
-}
+    return config;
+  },
+  (error: unknown) => Promise.reject(error)
+);
 
-async function parseError(response: Response): Promise<never> {
-  let detail: unknown = await response.text();
-  try {
-    detail = JSON.parse(String(detail));
-  } catch {
-    // Keep text response.
+service.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  (error: unknown) => {
+    const requestConfig = axios.isAxiosError(error) ? ((error.config ?? {}) as RequestConfig) : {};
+    const requestError = normalizeRequestError(error);
+
+    if (!requestConfig.suppressErrorToast && requestErrorHandler) {
+      requestErrorHandler(requestError);
+    }
+
+    return Promise.reject(new ApiError(requestError.message, requestError.status, requestError.response ?? requestError.raw));
   }
-  const message =
-    typeof detail === "object" && detail && "detail" in detail
-      ? String((detail as { detail: unknown }).detail)
-      : typeof detail === "object" && detail && "message" in detail
-        ? String((detail as { message: unknown }).message)
-      : response.statusText;
-  throw new ApiError(message || "Request failed", response.status, detail);
-}
+);
 
-async function request<T>(method: string, path: string, body?: unknown, query?: Query): Promise<T> {
-  const headers = new Headers();
-  const accessToken = token();
-  if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
-
-  let payload: BodyInit | undefined;
-  if (body instanceof FormData || body instanceof URLSearchParams) {
-    payload = body;
-  } else if (body !== undefined) {
-    headers.set("Content-Type", "application/json");
-    payload = JSON.stringify(body);
-  }
-
-  const response = await fetch(buildUrl(path, query), { method, headers, body: payload });
-  if (!response.ok) return parseError(response);
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+async function request<T = unknown, Data = unknown>(config: RequestConfig<Data>): Promise<T> {
+  const response = await service.request<T, AxiosResponse<T>, Data>(config);
+  return response.data;
 }
 
 export const api = {
-  get: <T>(path: string, query?: Query) => request<T>("GET", path, undefined, query),
-  post: <T>(path: string, body?: unknown, query?: Query) => request<T>("POST", path, body, query),
-  async download(path: string, filename: string) {
-    const headers = new Headers();
-    const accessToken = token();
-    if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
-    const response = await fetch(buildUrl(path), { headers });
-    if (!response.ok) return parseError(response);
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
+  get: <T>(url: string, params?: object) => request<T>({ url, method: "get", params }),
+  post: <T, Data = unknown>(url: string, data?: Data, params?: object) => request<T, Data>({ url, method: "post", data, params }),
+  async download(url: string, filename: string) {
+    const response = await service.request<Blob>({
+      url,
+      method: "get",
+      responseType: "blob"
+    });
+    const objectUrl = URL.createObjectURL(response.data);
     const anchor = document.createElement("a");
-    anchor.href = url;
+    anchor.href = objectUrl;
     anchor.download = filename;
     anchor.click();
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(objectUrl);
   }
 };
+
+export default request;
