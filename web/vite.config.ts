@@ -1,31 +1,43 @@
 import { fileURLToPath, URL } from "node:url";
 
 import vue from "@vitejs/plugin-vue";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 
-export default defineConfig({
-  plugins: [vue()],
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          three: ["three"]
+function parsePort(value: string | undefined, fallback: number) {
+  const port = Number(value);
+  return Number.isInteger(port) && port > 0 ? port : fallback;
+}
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  const devPort = parsePort(env.VITE_WEB_PORT, 8000);
+  const apiBaseUrl = env.VITE_API_BASE_URL || "http://localhost:8080";
+  const apiProxyTarget = apiBaseUrl === "/" ? "http://localhost:8080" : apiBaseUrl;
+
+  return {
+    plugins: [vue()],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            three: ["three"]
+          }
+        }
+      }
+    },
+    resolve: {
+      alias: {
+        "@": fileURLToPath(new URL("./src", import.meta.url))
+      }
+    },
+    server: {
+      port: devPort,
+      proxy: {
+        "/api": {
+          target: apiProxyTarget,
+          changeOrigin: true
         }
       }
     }
-  },
-  resolve: {
-    alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url))
-    }
-  },
-  server: {
-    port: 5173,
-    proxy: {
-      "/api": {
-        target: "http://localhost:8080",
-        changeOrigin: true
-      }
-    }
-  }
+  };
 });
