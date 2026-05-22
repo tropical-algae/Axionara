@@ -26,7 +26,7 @@ class SysSetting(BaseSettings):
 
 class BasicSetting(BaseSettings):
     # database
-    SQL_DATABASE_URI: str = ""
+    SQL_DATABASE_URI: str = "sqlite+aiosqlite:///cache/database.db"
     SQL_POOL_PRE_PING: bool = True
     SQL_POOL_SIZE: int = 10
     SQL_MAX_OVERFLOW: int = 20
