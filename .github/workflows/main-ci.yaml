@@ -1,4 +1,3 @@
-
 name: detection-release
 
 on:
@@ -32,6 +31,7 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
+    environment: release
     needs: detection
     if: github.ref == 'refs/heads/main'
     concurrency:
@@ -97,3 +97,21 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.release.outputs.tag }}
+
+      - name: Docker login
+        run: |
+          echo "IMAGE_NAME=tropicalalgae/axionara" >> $GITHUB_ENV
+          echo "IMAGE_VERSION=${{ steps.release.outputs.version }}" >> $GITHUB_ENV
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Docker Release
+        env:
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          IMAGE_VERSION: ${{ env.IMAGE_VERSION }}
+        run: |
+          docker build -t $IMAGE_NAME:$IMAGE_VERSION .
+          docker tag $IMAGE_NAME:$IMAGE_VERSION $IMAGE_NAME:$IMAGE_VERSION 
+          docker tag $IMAGE_NAME:$IMAGE_VERSION $IMAGE_NAME
+
+          docker push $IMAGE_NAME:$IMAGE_VERSION
+          docker push $IMAGE_NAME
