@@ -5,11 +5,11 @@ services:
     build:
       context: .
       args:
-        DEV: "true"
+        VITE_WEB_PORT: "8000"
+        VITE_API_BASE_URL: "/"
     ports:
-      - "8000:8000"
+      - "8000:80"
     env_file:
       - .env
-    command: poe run
     volumes:
       - /data/log:/workspace/log
