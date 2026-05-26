@@ -12,6 +12,7 @@ install: generate_dot_env
 	uv sync --dev
 	[ -d .git ] || git init
 	uv run pre-commit install
+	uv run pre-commit install-hooks 
 
 deploy: generate_dot_env
 	docker-compose build
