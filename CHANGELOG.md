@@ -1,5 +1,133 @@
 <!-- version list -->
 
+## v0.0.2 (2026-05-26)
+
+### Bug Fixes
+
+- **ci**: Fix detection job in workflow
+  ([`9b510f9`](https://github.com/tropical-algae/Axionara/commit/9b510f90affdcbb8551b31ec8b14ae53087094b0))
+
+### Chores
+
+- Update dev packages
+  ([`3af062d`](https://github.com/tropical-algae/Axionara/commit/3af062d111bc4165364500c0582d122ca36e26f5))
+
+- Upgrade package
+  ([`7b8e124`](https://github.com/tropical-algae/Axionara/commit/7b8e1246238277569850110960b1d95cc5780b81))
+
+- **ci**: Decouple version release and docker publish jobs
+  ([`2be8519`](https://github.com/tropical-algae/Axionara/commit/2be851952b87fa582313a13b9218b6099610bd73))
+
+- **dep**: Align ruff version with pre-commit
+  ([`83ea2cc`](https://github.com/tropical-algae/Axionara/commit/83ea2ccc276c03430f5586244a2e859bc04728b2))
+
+- **deps**: Bump aiosqlite from 0.21.0 to 0.22.1
+  ([`0a295c9`](https://github.com/tropical-algae/Axionara/commit/0a295c9d4d1522dbeeb8f4dbdfb0e9e6aef6436b))
+
+- **deps**: Bump docker/build-push-action from 6 to 7
+  ([`24df0d0`](https://github.com/tropical-algae/Axionara/commit/24df0d0c713b35f2f2f466aaf382e815eeb6347b))
+
+- **deps**: Bump docker/login-action from 3 to 4
+  ([`ff7374e`](https://github.com/tropical-algae/Axionara/commit/ff7374e66952d78df64531757801eb20ceed0fae))
+
+- **deps**: Bump docker/metadata-action from 5 to 6
+  ([`fbd132d`](https://github.com/tropical-algae/Axionara/commit/fbd132ddda9a8b725c1189a581afa40984329689))
+
+- **deps**: Bump docker/setup-buildx-action from 3 to 4
+  ([`298b037`](https://github.com/tropical-algae/Axionara/commit/298b037b5364168729342dff73695cb393df76b7))
+
+- **deps**: Bump fastapi from 0.112.4 to 0.136.3
+  ([`5a96ccb`](https://github.com/tropical-algae/Axionara/commit/5a96ccb03924d357d230072928517dfdb9de2b6f))
+
+- **deps**: Bump llama-index from 0.14.7 to 0.14.22
+  ([`5f5382e`](https://github.com/tropical-algae/Axionara/commit/5f5382ef7f7fdd66be95d4bc085c9887762cc022))
+
+- **deps**: Bump pillow from 12.0.0 to 12.2.0
+  ([`7c9d76b`](https://github.com/tropical-algae/Axionara/commit/7c9d76bda8ddc78b7d18a0e08671b563789296c6))
+
+- **deps**: Bump pymysql from 1.1.2 to 1.2.0
+  ([`55589ab`](https://github.com/tropical-algae/Axionara/commit/55589ab2838bc9034ff9a54e232869464f312610))
+
+- **deps**: Bump python-multipart from 0.0.20 to 0.0.29
+  ([`bc98da0`](https://github.com/tropical-algae/Axionara/commit/bc98da0606c3003cddafd322072cf77493765fee))
+
+- **deps**: Bump pytz from 2024.2 to 2026.2
+  ([`d4beab0`](https://github.com/tropical-algae/Axionara/commit/d4beab0bb69902b5b54ee2645c9b4c4e7ad73292))
+
+- **deps**: Bump requests from 2.33.0 to 2.34.2
+  ([`4629993`](https://github.com/tropical-algae/Axionara/commit/4629993449228f2fdaec8e4b46bd19b3c3c517c7))
+
+- **deps**: Bump sqlalchemy from 2.0.44 to 2.0.50
+  ([`44f57e9`](https://github.com/tropical-algae/Axionara/commit/44f57e912201112e481d852d44e586c25d3dd139))
+
+- **deps**: Bump sqlmodel from 0.0.22 to 0.0.38
+  ([`a54ef71`](https://github.com/tropical-algae/Axionara/commit/a54ef71f1d832c04d85f807ad9003f4faf49bcfb))
+
+- **deps**: Bump the uv group across 1 directory with 13 updates
+  ([`2240404`](https://github.com/tropical-algae/Axionara/commit/2240404e6705462c1dc3200f607c57113ee5fd92))
+
+- **deps**: Bump urllib3 from 2.5.0 to 2.7.0
+  ([`1cc1547`](https://github.com/tropical-algae/Axionara/commit/1cc1547aea7025bac463c51c6c7c3f0d928610ba))
+
+- **deps**: Bump uvicorn from 0.30.5 to 0.48.0
+  ([`a1f447a`](https://github.com/tropical-algae/Axionara/commit/a1f447af5cd3ca12bbb6037507d1bb483c39bd2b))
+
+- **deps**: Update markitdown[pdf] requirement
+  ([`66bb836`](https://github.com/tropical-algae/Axionara/commit/66bb836f50ad2854cb786a3322d136fac2f7741c))
+
+- **deps**: Update pydantic[email] requirement
+  ([`682d660`](https://github.com/tropical-algae/Axionara/commit/682d6609ec32f315c52cb001a293bc654fbe2aa4))
+
+- **deps-dev**: Bump black from 24.10.0 to 26.5.1
+  ([`013ca0e`](https://github.com/tropical-algae/Axionara/commit/013ca0ecc53ca918d466e15bd4c3390d9a361d95))
+
+- **deps-dev**: Bump mypy from 1.18.2 to 2.1.0
+  ([`a4b8ac9`](https://github.com/tropical-algae/Axionara/commit/a4b8ac99577056d396164343e7ebe4840f7c379b))
+
+- **deps-dev**: Bump pytest from 8.4.2 to 9.0.3
+  ([`d7812a1`](https://github.com/tropical-algae/Axionara/commit/d7812a1caa293110a1916c5a3e02738320bb0cb1))
+
+- **deps-dev**: Bump python-semantic-release from 10.4.1 to 10.5.3
+  ([`180adfa`](https://github.com/tropical-algae/Axionara/commit/180adfa6195d7a0b86dc454603cf8df1e1381af7))
+
+- **deps-dev**: Bump ruff from 0.12.12 to 0.15.14
+  ([`d3fb3cb`](https://github.com/tropical-algae/Axionara/commit/d3fb3cb31316c85d12802df918a466d64003c483))
+
+- **deps-dev**: Bump types-pytz
+  ([`c16b8cd`](https://github.com/tropical-algae/Axionara/commit/c16b8cd7548935374d9351e973db70c68b85d6e8))
+
+- **deps-dev**: Bump types-pyyaml
+  ([`d73426d`](https://github.com/tropical-algae/Axionara/commit/d73426d57040d8d1beb1bb4264dfdc58ec6b2d0e))
+
+- **lint**: Fix lint and type checking issues
+  ([`86b0fe9`](https://github.com/tropical-algae/Axionara/commit/86b0fe907bd7144f1e1d441368c5ac7b92490d23))
+
+- **pre-commit**: Update pre-commit rule
+  ([`2b3f102`](https://github.com/tropical-algae/Axionara/commit/2b3f10241a0e600826723e6c00ec7d5005f024cc))
+
+- **web**: Optimize the text description of the home page
+  ([`de98c95`](https://github.com/tropical-algae/Axionara/commit/de98c95f60c7307ca07e35e0e6c568abd88d3c2c))
+
+### Refactoring
+
+- **api**: Remove useless api
+  ([`c8c3bd0`](https://github.com/tropical-algae/Axionara/commit/c8c3bd0618bc5ebc8ab6652fdac33f8f2b877d80))
+
+- **dataset**: Optimize dataset summary generate function
+  ([`f645312`](https://github.com/tropical-algae/Axionara/commit/f6453121f1e51cb54fea5a09dfc2c91af366428c))
+
+- **db**: Migrate SQL operations to async
+  ([`1670ab9`](https://github.com/tropical-algae/Axionara/commit/1670ab97b10e1e35d71e0ee1d7f7453f2befadce))
+
+### Testing
+
+- **dataset**: Optimize dataset summary test
+  ([`3e7de48`](https://github.com/tropical-algae/Axionara/commit/3e7de48d1a3f3304ee341c81f651a8d26dc256e2))
+
+- **db**: Migrate database tests to async
+  ([`715e16a`](https://github.com/tropical-algae/Axionara/commit/715e16a17f811819d48abfe245c22b02ace0f40e))
+
+
 ## v0.0.1 (2026-05-26)
 
 ### Bug Fixes
