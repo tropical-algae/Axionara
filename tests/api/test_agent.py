@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 from fastapi import BackgroundTasks, UploadFile
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.api.endpoints.admin_dataset import (
     admin_datasets,
@@ -102,11 +102,15 @@ def patch_dataset_qa_agent(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.run(order=7)
 def test_provider_dataset_upload(
-    db_session: Session, data_store: DataStore, csv_upload: UploadFile
+    db_session: AsyncSession, data_store: DataStore, csv_upload: UploadFile
 ):
-    user = select_user_by_id(db=db_session, user_id=data_store.provider_user_id)
+    user = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.provider_user_id)
+    )
     if user is None:
-        user = select_user_by_username(db=db_session, username="provider_user")
+        user = asyncio.run(
+            select_user_by_username(db=db_session, username="provider_user")
+        )
     assert user is not None
 
     response = asyncio.run(
@@ -146,10 +150,14 @@ def test_provider_dataset_upload(
 
 
 @pytest.mark.run(order=8)
-def test_provider_dataset_list(db_session: Session, data_store: DataStore):
-    user = select_user_by_id(db=db_session, user_id=data_store.provider_user_id)
+def test_provider_dataset_list(db_session: AsyncSession, data_store: DataStore):
+    user = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.provider_user_id)
+    )
     if user is None:
-        user = select_user_by_username(db=db_session, username="provider_user")
+        user = asyncio.run(
+            select_user_by_username(db=db_session, username="provider_user")
+        )
     assert user is not None
 
     response = asyncio.run(my_uploaded_datasets(current_user=user, db=db_session))
@@ -158,10 +166,14 @@ def test_provider_dataset_list(db_session: Session, data_store: DataStore):
 
 
 @pytest.mark.run(order=9)
-def test_provider_dataset_detail(db_session: Session, data_store: DataStore):
-    user = select_user_by_id(db=db_session, user_id=data_store.provider_user_id)
+def test_provider_dataset_detail(db_session: AsyncSession, data_store: DataStore):
+    user = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.provider_user_id)
+    )
     if user is None:
-        user = select_user_by_username(db=db_session, username="provider_user")
+        user = asyncio.run(
+            select_user_by_username(db=db_session, username="provider_user")
+        )
     assert user is not None
 
     response = asyncio.run(
@@ -175,8 +187,10 @@ def test_provider_dataset_detail(db_session: Session, data_store: DataStore):
 
 
 @pytest.mark.run(order=10)
-def test_admin_analyze_csv_dataset(db_session: Session, data_store: DataStore):
-    admin = select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+def test_admin_analyze_csv_dataset(db_session: AsyncSession, data_store: DataStore):
+    admin = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+    )
     assert admin is not None
 
     job = asyncio.run(
@@ -202,9 +216,11 @@ def test_admin_analyze_csv_dataset(db_session: Session, data_store: DataStore):
 
 @pytest.mark.run(order=11)
 def test_admin_lists_datasets_and_analysis_jobs(
-    db_session: Session, data_store: DataStore
+    db_session: AsyncSession, data_store: DataStore
 ):
-    admin = select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+    admin = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+    )
     assert admin is not None
 
     datasets = asyncio.run(admin_datasets(current_user=admin, db=db_session))
@@ -226,8 +242,12 @@ def test_admin_lists_datasets_and_analysis_jobs(
 
 
 @pytest.mark.run(order=12)
-def test_admin_retries_failed_analysis_job(db_session: Session, data_store: DataStore):
-    admin = select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+def test_admin_retries_failed_analysis_job(
+    db_session: AsyncSession, data_store: DataStore
+):
+    admin = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+    )
     assert admin is not None
 
     jobs = asyncio.run(
@@ -239,7 +259,7 @@ def test_admin_retries_failed_analysis_job(db_session: Session, data_store: Data
     )
     failed_job = jobs[0]
     failed_job.job_status = "failed"
-    update_analysis_job(db=db_session, job=failed_job)
+    asyncio.run(update_analysis_job(db=db_session, job=failed_job))
 
     retry_job = asyncio.run(
         retry_analysis_job(job_id=failed_job.id, current_user=admin, db=db_session)
@@ -251,8 +271,12 @@ def test_admin_retries_failed_analysis_job(db_session: Session, data_store: Data
 
 
 @pytest.mark.run(order=13)
-def test_admin_approve_and_publish_dataset(db_session: Session, data_store: DataStore):
-    admin = select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+def test_admin_approve_and_publish_dataset(
+    db_session: AsyncSession, data_store: DataStore
+):
+    admin = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+    )
     assert admin is not None
 
     pending = asyncio.run(pending_datasets(current_user=admin, db=db_session))
@@ -281,8 +305,10 @@ def test_admin_approve_and_publish_dataset(db_session: Session, data_store: Data
 
 
 @pytest.mark.run(order=14)
-def test_admin_lists_review_records(db_session: Session, data_store: DataStore):
-    admin = select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+def test_admin_lists_review_records(db_session: AsyncSession, data_store: DataStore):
+    admin = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+    )
     assert admin is not None
 
     reviews = asyncio.run(
@@ -297,7 +323,7 @@ def test_admin_lists_review_records(db_session: Session, data_store: DataStore):
 
 
 @pytest.mark.run(order=15)
-def test_catalog_lists_published_dataset(db_session: Session, data_store: DataStore):
+def test_catalog_lists_published_dataset(db_session: AsyncSession, data_store: DataStore):
     rows = asyncio.run(list_catalog_datasets(db=db_session))
     detail = asyncio.run(
         catalog_dataset_detail(dataset_id=data_store.uploaded_dataset_id, db=db_session)
@@ -315,14 +341,14 @@ def test_catalog_lists_published_dataset(db_session: Session, data_store: DataSt
 
 
 @pytest.mark.run(order=16)
-def test_catalog_tag_filter(db_session: Session, data_store: DataStore):
+def test_catalog_tag_filter(db_session: AsyncSession, data_store: DataStore):
     rows = asyncio.run(list_catalog_datasets(tag_slug="csv", db=db_session))
     assert any(row.dataset.id == data_store.uploaded_dataset_id for row in rows)
 
 
 @pytest.mark.run(order=17)
 def test_catalog_public_profile_rag_answer(
-    db_session: Session, data_store: DataStore, monkeypatch: pytest.MonkeyPatch
+    db_session: AsyncSession, data_store: DataStore, monkeypatch: pytest.MonkeyPatch
 ):
     patch_dataset_qa_agent(monkeypatch)
 
@@ -352,8 +378,10 @@ def test_catalog_public_profile_rag_answer(
 
 
 @pytest.mark.run(order=18)
-def test_consumer_acquires_dataset(db_session: Session, data_store: DataStore):
-    consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+def test_consumer_acquires_dataset(db_session: AsyncSession, data_store: DataStore):
+    consumer = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+    )
     assert consumer is not None
 
     grant = asyncio.run(
@@ -377,8 +405,12 @@ def test_consumer_acquires_dataset(db_session: Session, data_store: DataStore):
 
 
 @pytest.mark.run(order=19)
-def test_my_datasets_lists_acquired_dataset(db_session: Session, data_store: DataStore):
-    consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+def test_my_datasets_lists_acquired_dataset(
+    db_session: AsyncSession, data_store: DataStore
+):
+    consumer = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+    )
     assert consumer is not None
 
     rows = asyncio.run(my_datasets(current_user=consumer, db=db_session))
@@ -393,11 +425,13 @@ def test_my_datasets_lists_acquired_dataset(db_session: Session, data_store: Dat
 
 @pytest.mark.run(order=20)
 def test_consumer_asks_acquired_dataset_content(
-    db_session: Session, data_store: DataStore, monkeypatch: pytest.MonkeyPatch
+    db_session: AsyncSession, data_store: DataStore, monkeypatch: pytest.MonkeyPatch
 ):
     patch_dataset_qa_agent(monkeypatch)
 
-    consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+    consumer = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+    )
     assert consumer is not None
 
     response = asyncio.run(
@@ -418,9 +452,11 @@ def test_consumer_asks_acquired_dataset_content(
 
 @pytest.mark.run(order=21)
 def test_consumer_exports_acquired_dataset_as_sql(
-    db_session: Session, data_store: DataStore
+    db_session: AsyncSession, data_store: DataStore
 ):
-    consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+    consumer = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+    )
     assert consumer is not None
 
     job = asyncio.run(
@@ -432,7 +468,9 @@ def test_consumer_exports_acquired_dataset_as_sql(
             db=db_session,
         )
     )
-    processed = ExportService().process_export_job(db=db_session, job_id=job.id)
+    processed = asyncio.run(
+        ExportService().process_export_job(db=db_session, job_id=job.id)
+    )
     detail = asyncio.run(
         my_export_job_detail(job_id=job.id, current_user=consumer, db=db_session)
     )
@@ -456,8 +494,12 @@ def test_consumer_exports_acquired_dataset_as_sql(
 
 
 @pytest.mark.run(order=22)
-def test_consumer_retries_failed_export_job(db_session: Session, data_store: DataStore):
-    consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+def test_consumer_retries_failed_export_job(
+    db_session: AsyncSession, data_store: DataStore
+):
+    consumer = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+    )
     assert consumer is not None
 
     jobs = asyncio.run(
@@ -470,7 +512,7 @@ def test_consumer_retries_failed_export_job(db_session: Session, data_store: Dat
     failed_job = jobs[0]
     failed_job.job_status = "failed"
     failed_job.error_message = "simulated export failure"
-    update_export_job(db=db_session, job=failed_job)
+    asyncio.run(update_export_job(db=db_session, job=failed_job))
 
     retry_job = asyncio.run(
         retry_my_export(
@@ -480,7 +522,9 @@ def test_consumer_retries_failed_export_job(db_session: Session, data_store: Dat
             db=db_session,
         )
     )
-    processed = ExportService().process_export_job(db=db_session, job_id=retry_job.id)
+    processed = asyncio.run(
+        ExportService().process_export_job(db=db_session, job_id=retry_job.id)
+    )
 
     assert retry_job.id != failed_job.id
     assert retry_job.target_format == failed_job.target_format
@@ -489,7 +533,7 @@ def test_consumer_retries_failed_export_job(db_session: Session, data_store: Dat
 
 @pytest.mark.run(order=23)
 def test_pdf_analysis_skips_cleaning(
-    db_session: Session,
+    db_session: AsyncSession,
     data_store: DataStore,
     pdf_upload: UploadFile,
     monkeypatch: pytest.MonkeyPatch,
@@ -506,8 +550,12 @@ def test_pdf_analysis_skips_cleaning(
         "axionara.core.processing.parsers.simple.DocumentTextExtractor.extract",
         fake_extract,
     )
-    provider = select_user_by_username(db=db_session, username="provider_user")
-    admin = select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+    provider = asyncio.run(
+        select_user_by_username(db=db_session, username="provider_user")
+    )
+    admin = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+    )
     assert provider is not None
     assert admin is not None
 
@@ -541,11 +589,17 @@ def test_pdf_analysis_skips_cleaning(
 
 @pytest.mark.run(order=24)
 def test_xlsx_analysis_and_export(
-    db_session: Session, data_store: DataStore, xlsx_upload: UploadFile
+    db_session: AsyncSession, data_store: DataStore, xlsx_upload: UploadFile
 ):
-    provider = select_user_by_username(db=db_session, username="provider_user")
-    admin = select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
-    consumer = select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+    provider = asyncio.run(
+        select_user_by_username(db=db_session, username="provider_user")
+    )
+    admin = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+    )
+    consumer = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+    )
     assert provider is not None
     assert admin is not None
     assert consumer is not None
@@ -598,7 +652,9 @@ def test_xlsx_analysis_and_export(
             db=db_session,
         )
     )
-    processed = ExportService().process_export_job(db=db_session, job_id=export_job.id)
+    processed = asyncio.run(
+        ExportService().process_export_job(db=db_session, job_id=export_job.id)
+    )
     download = asyncio.run(
         download_my_export(job_id=export_job.id, current_user=consumer, db=db_session)
     )
@@ -614,10 +670,14 @@ def test_xlsx_analysis_and_export(
 
 @pytest.mark.run(order=25)
 def test_sql_upload_analysis_keeps_raw_only(
-    db_session: Session, data_store: DataStore, sql_upload: UploadFile
+    db_session: AsyncSession, data_store: DataStore, sql_upload: UploadFile
 ):
-    provider = select_user_by_username(db=db_session, username="provider_user")
-    admin = select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+    provider = asyncio.run(
+        select_user_by_username(db=db_session, username="provider_user")
+    )
+    admin = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+    )
     assert provider is not None
     assert admin is not None
 
@@ -647,8 +707,12 @@ def test_sql_upload_analysis_keeps_raw_only(
 
 
 @pytest.mark.run(order=26)
-def test_admin_archives_published_dataset(db_session: Session, data_store: DataStore):
-    admin = select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+def test_admin_archives_published_dataset(
+    db_session: AsyncSession, data_store: DataStore
+):
+    admin = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.admin_user_id)
+    )
     assert admin is not None
 
     review = asyncio.run(

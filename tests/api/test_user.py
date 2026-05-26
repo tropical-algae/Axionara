@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 from fastapi.security import OAuth2PasswordRequestForm, SecurityScopes
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.api.deps import get_current_user
 from axionara.app.api.endpoints.auth import (
@@ -67,7 +67,7 @@ def test_storage_status_local_backend(monkeypatch: pytest.MonkeyPatch, tmp_path)
     "user",
     [TEMP_USER],
 )
-def test_user_register(db_session: Session, user: dict):
+def test_user_register(db_session: AsyncSession, user: dict):
     payload = asyncio.run(user_register(user=UserBasicInfo(**user), db=db_session))
     assert payload.username == user["username"]
     assert payload.role == user["role"]
@@ -78,7 +78,7 @@ def test_user_register(db_session: Session, user: dict):
     "user",
     [TEMP_USER],
 )
-def test_user_login_api(db_session: Session, data_store: DataStore, user: dict):
+def test_user_login_api(db_session: AsyncSession, data_store: DataStore, user: dict):
     payload = asyncio.run(
         login_access_token(
             db=db_session,
@@ -98,7 +98,7 @@ def test_user_login_api(db_session: Session, data_store: DataStore, user: dict):
 
 
 @pytest.mark.run(order=4)
-def test_user_token(db_session: Session, data_store: DataStore):
+def test_user_token(db_session: AsyncSession, data_store: DataStore):
     token_payload: TokenPayload = verift_access_token(data_store.provider_token_data)
     user = asyncio.run(
         get_current_user(
@@ -115,14 +115,14 @@ def test_user_token(db_session: Session, data_store: DataStore):
 
 
 @pytest.mark.run(order=5)
-def test_admin_register(db_session: Session, data_store: DataStore):
+def test_admin_register(db_session: AsyncSession, data_store: DataStore):
     payload = asyncio.run(user_register(user=UserBasicInfo(**TEMP_ADMIN), db=db_session))
     data_store.admin_user_id = payload.id
     assert payload.role == ScopeType.ADMIN.value
 
 
 @pytest.mark.run(order=6)
-def test_consumer_register(db_session: Session, data_store: DataStore):
+def test_consumer_register(db_session: AsyncSession, data_store: DataStore):
     payload = asyncio.run(
         user_register(user=UserBasicInfo(**TEMP_CONSUMER), db=db_session)
     )
