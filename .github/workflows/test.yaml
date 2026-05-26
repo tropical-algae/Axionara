@@ -22,4 +22,4 @@ jobs:
           pip install uv==${{ env.UV_VERSION }}
           uv sync --dev --frozen
       - name: Run Tests
-        run: uv run poe test-ci
+        run: uv run poe test
