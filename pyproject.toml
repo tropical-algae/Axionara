@@ -50,7 +50,7 @@ dev = [
   "types-pyyaml>=6.0.12.20260518,<7",
   "types-pytz>=2026.2.0.20260518,<2027",
   "sqlacodegen==3.0.0rc5",
-  "pre-commit>=4.3.0,<5",
+  "pre-commit>=4.6.0,<5",
   "poethepoet>=0.37.0",
 ]
 release = ["python-semantic-release>=10.5.3,<11"]
