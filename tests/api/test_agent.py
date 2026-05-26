@@ -734,7 +734,7 @@ def test_admin_archives_published_dataset(
 def test_summary_tag_generator_uses_llm_when_enabled(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(settings, "GPT_API_KEY", "fake-key")
 
-    def fake_generate_with_llm(self, **kwargs):
+    async def fake_generate_with_llm(self, **kwargs):
         _ = self, kwargs
         return SummaryTagResult(
             public_summary="LLM 生成的公开摘要",
@@ -757,20 +757,22 @@ def test_summary_tag_generator_uses_llm_when_enabled(monkeypatch: pytest.MonkeyP
         )
 
     monkeypatch.setattr(SummaryTagGenerator, "_generate_with_llm", fake_generate_with_llm)
-    result = SummaryTagGenerator().generate(
-        dataset=DatasetAsset(
-            id="DATTEST",
-            title="Population Dataset",
-            owner_id="USRTEST",
-            source_format="csv",
-            original_filename="population.csv",
-            storage_uri="raw/population.csv",
-        ),
-        statistics={"common": {"representation_type": "tabular"}},
-        cleaning_actions={"items": []},
-        issues={"total_count": 0},
-        export_capabilities={"allowed_formats": ["raw", "csv", "json", "sql"]},
-        use_llm=True,
+    result = asyncio.run(
+        SummaryTagGenerator().generate(
+            dataset=DatasetAsset(
+                id="DATTEST",
+                title="Population Dataset",
+                owner_id="USRTEST",
+                source_format="csv",
+                original_filename="population.csv",
+                storage_uri="raw/population.csv",
+            ),
+            statistics={"common": {"representation_type": "tabular"}},
+            cleaning_actions={"items": []},
+            issues={"total_count": 0},
+            export_capabilities={"allowed_formats": ["raw", "csv", "json", "sql"]},
+            use_llm=True,
+        )
     )
 
     assert result.public_summary == "LLM 生成的公开摘要"
