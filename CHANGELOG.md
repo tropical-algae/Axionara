@@ -1,5 +1,13 @@
 <!-- version list -->
 
+## v0.0.4 (2026-05-26)
+
+### Chores
+
+- Define publish env
+  ([`7e9564c`](https://github.com/tropical-algae/Axionara/commit/7e9564cceb66c654da5b71c40c13726998589832))
+
+
 ## v0.0.3 (2026-05-26)
 
 ### Chores

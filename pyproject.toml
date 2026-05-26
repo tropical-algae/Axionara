@@ -1,6 +1,6 @@
 [project]
 name = "Axionara"
-version = "0.0.3"
+version = "0.0.4"
 description = "一个支撑政务数据的可信数据基座，用于跨部门协同与价值挖掘"
 authors = [{ name = "tropical-algae", email = "tropicalalgae@gmail.com" }]
 requires-python = ">=3.11"
