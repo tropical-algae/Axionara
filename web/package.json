@@ -1,0 +1,31 @@
+{
+  "name": "axionara-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json"
+  },
+  "dependencies": {
+    "axios": "^1.16.1",
+    "gsap": "^3.12.5",
+    "lucide-vue-next": "^0.468.0",
+    "pinia": "^2.2.6",
+    "three": "^0.184.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.2",
+    "@types/three": "^0.184.1",
+    "@vitejs/plugin-vue": "^5.1.4",
+    "playwright": "^1.60.0",
+    "sass": "^1.80.6",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "vue-tsc": "^2.1.10"
+  }
+}

@@ -1,0 +1,25 @@
+from sqlmodel import Session
+
+from axionara.app.services.dataset_qa_agent_service import DatasetQaAgentService
+from axionara.core.model.dataset import CatalogRagResponse
+
+
+class CatalogRagService:
+    def __init__(self):
+        self.agent_service = DatasetQaAgentService()
+
+    async def ask(
+        self,
+        db: Session,
+        question: str,
+        dataset_id: str | None = None,
+        tag_slug: str | None = None,
+        limit: int = 3,
+    ) -> CatalogRagResponse:
+        return await self.agent_service.ask_public_profiles(
+            db=db,
+            question=question,
+            dataset_id=dataset_id,
+            tag_slug=tag_slug,
+            limit=limit,
+        )

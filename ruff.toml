@@ -1,0 +1,94 @@
+target-version = "py310"
+line-length = 90
+output-format = "grouped"
+exclude = [
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".ipynb_checkpoints",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pyenv",
+  ".pytest_cache",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  ".vscode",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "site-packages",
+  "venv",
+  "*/alembic/*",
+]
+
+[lint]
+extend-select = [
+  "C",     # Complexity
+  "E",     # PEP8 errors
+  "F",     # PEP8 formatting
+  "I",     # Import sorting
+  "UP",    # Pyupgrade upgrades
+  "W",     # PEP8 warnings
+  "T201",  # print found
+  "T10",   # dubug found
+  "FLY",   # static-join-to-f-string
+  "RET",   # unnecessary-return
+  "N",     # name-conventions
+  "PIE",   # Improper comments
+  "SIM",   # simplify
+  "ERA",   # commented-out-code
+  "ASYNC", # async
+  "TID",   # tidy-imports
+  "A",     # bad name
+  "ARG",   # bad arguments
+  "PTH",   # use-pathlib
+  "RUF",   # specific rules
+  "B",     # flake8-bugbear.
+  "PT",    # pytest
+  "PERF",  # Perflint
+]
+ignore = [
+  "C901",   # Function too complex
+  "E501",   # Line length (handled by ruff-format)
+  "UP007",  # X | Y style Unions
+  "B008",   # Do not perform function calls in argument defaults
+  "PT006",  # Ignore pytest.mark.parametrize
+  "PT011",  # Ignore `pytest.raises(ValueError)` is too broad
+  "D203",   # one-blank-line-before-class
+  "D212",   # multi-line-summary-first-line
+  "ERA001",
+  "W291",
+  "RUF001",
+  "RET504",
+  "SIM108",
+  "F401",
+  "F403",
+  "PT009",
+  "PTH103",
+  "PTH109",
+  "PTH112",
+  "PTH113",
+  "PTH118",
+  "PTH123",
+  "RUF003", # chinese punctuation
+  "RUF002", # chinese punctuation
+]
+
+[lint.flake8-builtins]
+builtins-ignorelist = ["input", "id", "bytes"]
+
+[lint.pydocstyle]
+convention = "numpy"
+
+# [format]
+# exclude = ["*/alembic/*"]
