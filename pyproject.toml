@@ -10,7 +10,7 @@ dependencies = [
   "fastapi>=0.112.0,<0.113",
   "uvicorn==0.48.0",
   "pydantic[email]>=2.13.4,<3",
-  "requests>=2.33.0,<3",
+  "requests>=2.34.2,<3",
   "loguru>=0.7.0,<0.8",
   "pydantic-settings>=2.4.0,<3",
   "pytz~=2024.1",
