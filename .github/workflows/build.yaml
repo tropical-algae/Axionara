@@ -35,7 +35,7 @@ jobs:
             type=raw,value=latest
 
       - name: Build and Push Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
