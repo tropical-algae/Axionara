@@ -51,7 +51,7 @@ dev = [
   "types-pytz>=2026.2.0.20260518,<2027",
   "sqlacodegen==3.0.0rc5",
   "pre-commit>=4.3.0,<5",
-  "poethepoet>=0.37.0",
+  "poethepoet>=0.46.0",
 ]
 release = ["python-semantic-release>=10.5.3,<11"]
 aws = ["mangum>=0.17.0,<0.18"]
