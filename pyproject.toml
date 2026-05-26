@@ -29,7 +29,7 @@ dependencies = [
   "cryptography>=46.0.7",
   "minio>=7.2.0,<8",
   "openpyxl>=3.1.5,<4",
-  "markitdown[pdf]>=0.1.4,<0.2",
+  "markitdown[pdf]>=0.1.5,<0.2",
   "alembic>=1.16.0,<2",
 ]
 
