@@ -1,3 +1,4 @@
+import asyncio
 import shutil
 from collections.abc import Generator
 from io import BytesIO
@@ -6,7 +7,7 @@ import pytest
 from fastapi import UploadFile
 from openpyxl import Workbook
 from pydantic import BaseModel
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.core.db.session import init_db_models, local_session
 from tests import TEMP_SQLITE_FILEPATH, TEMP_STORAGE_ROOT
@@ -24,18 +25,20 @@ class DataStore(BaseModel):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def _initialize_database() -> Generator[None, None, None]:
+def _initialize_database() -> None:
     TEMP_SQLITE_FILEPATH.unlink(missing_ok=True)
     shutil.rmtree(TEMP_STORAGE_ROOT, ignore_errors=True)
     TEMP_SQLITE_FILEPATH.parent.mkdir(parents=True, exist_ok=True)
-    init_db_models()
-    return
+    asyncio.run(init_db_models())
 
 
-@pytest.fixture(scope="session", name="db_session")
-def test_db_session() -> Generator[Session, None, None]:
-    with local_session() as db:
+@pytest.fixture(name="db_session")
+def test_db_session() -> Generator[AsyncSession, None, None]:
+    db = local_session()
+    try:
         yield db
+    finally:
+        asyncio.run(db.close())
 
 
 @pytest.fixture(scope="session", name="data_store")

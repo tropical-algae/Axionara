@@ -63,6 +63,7 @@ class PromptSetting(BaseSettings):
     AGENT_SYSTEM_PROMPT_PATH: str = "agent/system.md"
     AGENT_DATA_QA_PROMPT_PATH: str = "agent/data_qa.md"
     AGENT_DATA_QA_REQUEST_PROMPT_PATH: str = "agent/data_qa_request.md"
+    AGENT_DATASET_SUMMARY_PROMPT_PATH: str = "agent/dataset_summary.md"
 
 
 class StorageSetting(BaseSettings):

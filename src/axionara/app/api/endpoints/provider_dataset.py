@@ -2,7 +2,7 @@ from datetime import date
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, Form, Security, UploadFile
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.api.deps import get_current_user, get_db
 from axionara.app.services.dataset_service import (
@@ -36,7 +36,7 @@ async def upload_dataset(
     current_user: UserAccount = Security(
         get_current_user, scopes=[ScopeType.PROVIDER.value, ScopeType.ADMIN.value]
     ),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     return await create_dataset_asset(
         db=db,
@@ -63,7 +63,7 @@ async def my_uploaded_datasets(
     current_user: UserAccount = Security(
         get_current_user, scopes=[ScopeType.PROVIDER.value, ScopeType.ADMIN.value]
     ),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     return await list_provider_datasets(db=db, owner=current_user)
 
@@ -74,6 +74,6 @@ async def uploaded_dataset_detail(
     current_user: UserAccount = Security(
         get_current_user, scopes=[ScopeType.PROVIDER.value, ScopeType.ADMIN.value]
     ),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     return await get_provider_dataset(db=db, owner=current_user, dataset_id=dataset_id)

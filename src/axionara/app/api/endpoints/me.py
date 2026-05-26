@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Security
 from fastapi.responses import Response
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.api.deps import get_current_user, get_db
 from axionara.app.services.access_service import AccessService
@@ -32,9 +32,9 @@ async def my_datasets(
     current_user: UserAccount = Security(
         get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
     ),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
-    rows = AccessService().list_my_datasets(db=db, user=current_user)
+    rows = await AccessService().list_my_datasets(db=db, user=current_user)
     return [
         MyDatasetRead(
             grant=AccessGrantRead.model_validate(grant),
@@ -53,7 +53,7 @@ async def ask_my_dataset_content(
     current_user: UserAccount = Security(
         get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
     ),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     return await AuthorizedContentRagService().ask(
         db=db,
@@ -72,9 +72,9 @@ async def request_dataset_export(
     current_user: UserAccount = Security(
         get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
     ),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
-    job = ExportService().create_export_job(
+    job = await ExportService().create_export_job(
         db=db,
         dataset_id=dataset_id,
         target_format=request.target_format.value,
@@ -90,9 +90,9 @@ async def my_export_jobs(
     current_user: UserAccount = Security(
         get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
     ),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
-    return ExportService().list_my_export_jobs(
+    return await ExportService().list_my_export_jobs(
         db=db, user=current_user, dataset_id=dataset_id
     )
 
@@ -103,9 +103,11 @@ async def my_export_job_detail(
     current_user: UserAccount = Security(
         get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
     ),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
-    return ExportService().get_my_export_job(db=db, job_id=job_id, user=current_user)
+    return await ExportService().get_my_export_job(
+        db=db, job_id=job_id, user=current_user
+    )
 
 
 @router.post("/exports/{job_id}/retry", response_model=ExportJobRead)
@@ -115,9 +117,9 @@ async def retry_my_export(
     current_user: UserAccount = Security(
         get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
     ),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
-    job = ExportService().retry_export_job(db=db, job_id=job_id, user=current_user)
+    job = await ExportService().retry_export_job(db=db, job_id=job_id, user=current_user)
     background_tasks.add_task(process_export_job_background, job.id)
     return job
 
@@ -128,6 +130,6 @@ async def download_my_export(
     current_user: UserAccount = Security(
         get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
     ),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Response:
-    return ExportService().download_export(db=db, job_id=job_id, user=current_user)
+    return await ExportService().download_export(db=db, job_id=job_id, user=current_user)

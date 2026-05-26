@@ -50,7 +50,7 @@ class SearchAuthorizedDatasetContentTool(ToolBase):
             )
         normalized_question = (question or context.question).strip()
         service = DatasetContentRetrievalService()
-        matches = service.search(
+        matches = await service.search(
             db=context.db,
             dataset_id=resolved_dataset_id,
             question=normalized_question,

@@ -1,17 +1,18 @@
-from sqlmodel import Session, select
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.utils.security import get_password_hash
 from axionara.core.db.models import UserAccount
 
 
-def select_all_user(db: Session) -> list[UserAccount]:
-    users = db.exec(select(UserAccount))
+async def select_all_user(db: AsyncSession) -> list[UserAccount]:
+    users = await db.exec(select(UserAccount))
     return list(users.all())
 
 
-def select_user_by_id(db: Session, user_id: str | None) -> UserAccount | None:
+async def select_user_by_id(db: AsyncSession, user_id: str | None) -> UserAccount | None:
     if user_id:
-        user_result = db.exec(
+        user_result = await db.exec(
             select(UserAccount).where(
                 UserAccount.id == user_id,
                 UserAccount.is_active == True,  # noqa: E712
@@ -21,9 +22,11 @@ def select_user_by_id(db: Session, user_id: str | None) -> UserAccount | None:
     return None
 
 
-def select_user_by_username(db: Session, username: str | None) -> UserAccount | None:
+async def select_user_by_username(
+    db: AsyncSession, username: str | None
+) -> UserAccount | None:
     if username:
-        user_result = db.exec(
+        user_result = await db.exec(
             select(UserAccount).where(
                 UserAccount.username == username,
                 UserAccount.is_active == True,  # noqa: E712
@@ -33,9 +36,9 @@ def select_user_by_username(db: Session, username: str | None) -> UserAccount | 
     return None
 
 
-def select_user_by_email(db: Session, email: str | None) -> UserAccount | None:
+async def select_user_by_email(db: AsyncSession, email: str | None) -> UserAccount | None:
     if email:
-        user_result = db.exec(
+        user_result = await db.exec(
             select(UserAccount).where(
                 UserAccount.email == email,
                 UserAccount.is_active == True,  # noqa: E712
@@ -45,21 +48,23 @@ def select_user_by_email(db: Session, email: str | None) -> UserAccount | None:
     return None
 
 
-def select_user_by_login_name(db: Session, login_name: str | None) -> UserAccount | None:
+async def select_user_by_login_name(
+    db: AsyncSession, login_name: str | None
+) -> UserAccount | None:
     if not login_name:
         return None
-    user = select_user_by_username(db=db, username=login_name)
+    user = await select_user_by_username(db=db, username=login_name)
     if user is not None:
         return user
-    return select_user_by_email(db=db, email=login_name)
+    return await select_user_by_email(db=db, email=login_name)
 
 
-def insert_user(db: Session, user: UserAccount) -> UserAccount:
+async def insert_user(db: AsyncSession, user: UserAccount) -> UserAccount:
     user.password = get_password_hash(user.password)
 
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
     return user
 
 

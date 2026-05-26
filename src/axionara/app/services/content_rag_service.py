@@ -1,4 +1,4 @@
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.services.dataset_qa_agent_service import DatasetQaAgentService
 from axionara.core.db.models import UserAccount
@@ -11,7 +11,7 @@ class AuthorizedContentRagService:
 
     async def ask(
         self,
-        db: Session,
+        db: AsyncSession,
         dataset_id: str,
         question: str,
         user: UserAccount,

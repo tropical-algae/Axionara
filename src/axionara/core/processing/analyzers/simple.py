@@ -1,9 +1,13 @@
+import json
+
 import json_repair
-from llama_index.llms.openai import OpenAI
 
 from axionara.common.config import settings
+from axionara.core.agent.agent import MyAgent
+from axionara.core.agent.factory import agent_factory
 from axionara.core.db.models import DatasetAsset
 from axionara.core.processing.types import CleaningResult, ParsedResult, SummaryTagResult
+from axionara.core.prompt import load_prompt
 
 
 class StatisticsBuilder:
@@ -135,7 +139,7 @@ class ExportCapabilityEvaluator:
 
 
 class SummaryTagGenerator:
-    def generate(
+    async def generate(
         self,
         dataset: DatasetAsset,
         statistics: dict,
@@ -155,7 +159,7 @@ class SummaryTagGenerator:
             return fallback
 
         try:
-            return self._generate_with_llm(
+            return await self._generate_with_llm(
                 dataset=dataset,
                 statistics=statistics,
                 cleaning_actions=cleaning_actions,
@@ -244,7 +248,7 @@ class SummaryTagGenerator:
             return "文档文本提取状态：失败，公开概况不包含原文内容。"
         return "文档文本提取状态：未提取到可用文本。"
 
-    def _generate_with_llm(
+    async def _generate_with_llm(
         self,
         dataset: DatasetAsset,
         statistics: dict,
@@ -253,22 +257,21 @@ class SummaryTagGenerator:
         export_capabilities: dict,
         fallback: SummaryTagResult,
     ) -> SummaryTagResult:
-        llm = OpenAI(
-            api_key=settings.GPT_API_KEY,
-            api_base=settings.GPT_BASE_URL or None,
+        agent: MyAgent = agent_factory.get_agent(
+            agent=MyAgent,
             model=settings.GPT_DEFAULT_MODEL,
-            temperature=settings.GPT_TEMPERATURE,
         )
-        response = llm.complete(
-            self._build_llm_prompt(
+        response = await agent.run(
+            message=self._build_llm_prompt(
                 dataset=dataset,
                 statistics=statistics,
                 cleaning_actions=cleaning_actions,
                 issues=issues,
                 export_capabilities=export_capabilities,
-            )
+            ),
+            tools=[],
         )
-        payload = json_repair.loads(response.text)
+        payload = json_repair.loads(response.content)
         if not isinstance(payload, dict):
             return fallback
 
@@ -286,6 +289,29 @@ class SummaryTagGenerator:
             llm_output_json={"status": "completed", "payload": payload},
         )
 
+    def _build_llm_prompt(
+        self,
+        dataset: DatasetAsset,
+        statistics: dict,
+        cleaning_actions: dict,
+        issues: dict,
+        export_capabilities: dict,
+    ) -> str:
+        template = load_prompt(settings.AGENT_DATASET_SUMMARY_PROMPT_PATH)
+        return template.format(
+            dataset_title=dataset.title,
+            dataset_description=dataset.description or "",
+            source_format=dataset.source_format,
+            statistics=json.dumps(statistics, ensure_ascii=False, default=str),
+            cleaning_actions=json.dumps(
+                cleaning_actions, ensure_ascii=False, default=str
+            ),
+            issues=json.dumps(issues, ensure_ascii=False, default=str),
+            export_capabilities=json.dumps(
+                export_capabilities, ensure_ascii=False, default=str
+            ),
+        )
+
     def _merge_suggested_tags(self, fallback: dict, llm_tags: object) -> dict:
         fallback_items = fallback.get("items", [])
         llm_items = llm_tags.get("items", []) if isinstance(llm_tags, dict) else []
@@ -300,31 +326,3 @@ class SummaryTagGenerator:
             seen.add(key)
             merged.append(item)
         return {"items": merged}
-
-    def _build_llm_prompt(
-        self,
-        dataset: DatasetAsset,
-        statistics: dict,
-        cleaning_actions: dict,
-        issues: dict,
-        export_capabilities: dict,
-    ) -> str:
-        return f"""
-你是数据资产审核助手。请只基于以下公开元数据生成数据资产公开展示内容，不能编造原始数据内容，不能输出隐私样本值。
-
-数据标题：{dataset.title}
-数据描述：{dataset.description or ""}
-源格式：{dataset.source_format}
-公开统计：{statistics}
-清洗动作：{cleaning_actions}
-质量问题：{issues}
-导出能力：{export_capabilities}
-
-请只输出 JSON 对象，字段为：
-public_summary: 面向数据使用者的简短摘要
-processing_summary: 系统完成了哪些处理
-cleaning_summary: 清洗过程做了哪些调整，不能包含隐私信息
-risk_summary: 公开展示风险说明
-public_rag_text: 用于公开概况问答的材料
-suggested_tags: {{"items": [{{"name": "...", "slug": "...", "category": "domain|format|data_type", "source": "llm", "confidence": 0.0到1.0}}]}}
-""".strip()

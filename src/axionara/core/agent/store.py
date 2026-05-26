@@ -95,7 +95,7 @@ class AgentStore:
                 session_id=session_id,
                 async_database_uri=settings.SQL_DATABASE_URI,
                 table_name=settings.AGENT_MEMORY_SQL_TABLE,
-                async_engine=local_engine,
+                async_engine=local_engine,  # type: ignore
                 token_limit=1200,
                 chat_history_token_ratio=0.7,
                 token_flush_size=800,

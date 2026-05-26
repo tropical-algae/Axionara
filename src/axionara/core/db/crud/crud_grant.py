@@ -1,19 +1,20 @@
-from sqlmodel import Session, select
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.core.db.models import AccessGrant, ExportJob
 
 
-def insert_access_grant(db: Session, grant: AccessGrant) -> AccessGrant:
+async def insert_access_grant(db: AsyncSession, grant: AccessGrant) -> AccessGrant:
     db.add(grant)
-    db.commit()
-    db.refresh(grant)
+    await db.commit()
+    await db.refresh(grant)
     return grant
 
 
-def select_active_access_grant(
-    db: Session, dataset_id: str, user_id: str
+async def select_active_access_grant(
+    db: AsyncSession, dataset_id: str, user_id: str
 ) -> AccessGrant | None:
-    result = db.exec(
+    result = await db.exec(
         select(AccessGrant).where(
             AccessGrant.dataset_id == dataset_id,
             AccessGrant.user_id == user_id,
@@ -23,49 +24,51 @@ def select_active_access_grant(
     return result.first()
 
 
-def select_access_grants_by_user(db: Session, user_id: str) -> list[AccessGrant]:
-    result = db.exec(
+async def select_access_grants_by_user(
+    db: AsyncSession, user_id: str
+) -> list[AccessGrant]:
+    result = await db.exec(
         select(AccessGrant)
         .where(AccessGrant.user_id == user_id, AccessGrant.grant_status == "granted")
-        .order_by(AccessGrant.granted_at.desc())
+        .order_by(AccessGrant.granted_at.desc())  # type: ignore
     )
     return list(result.all())
 
 
-def insert_export_job(db: Session, job: ExportJob) -> ExportJob:
+async def insert_export_job(db: AsyncSession, job: ExportJob) -> ExportJob:
     db.add(job)
-    db.commit()
-    db.refresh(job)
+    await db.commit()
+    await db.refresh(job)
     return job
 
 
-def update_export_job(db: Session, job: ExportJob) -> ExportJob:
+async def update_export_job(db: AsyncSession, job: ExportJob) -> ExportJob:
     db.add(job)
-    db.commit()
-    db.refresh(job)
+    await db.commit()
+    await db.refresh(job)
     return job
 
 
-def select_export_job_by_id(db: Session, job_id: str) -> ExportJob | None:
-    result = db.exec(select(ExportJob).where(ExportJob.id == job_id))
+async def select_export_job_by_id(db: AsyncSession, job_id: str) -> ExportJob | None:
+    result = await db.exec(select(ExportJob).where(ExportJob.id == job_id))
     return result.first()
 
 
-def select_export_jobs_by_user(db: Session, user_id: str) -> list[ExportJob]:
-    result = db.exec(
+async def select_export_jobs_by_user(db: AsyncSession, user_id: str) -> list[ExportJob]:
+    result = await db.exec(
         select(ExportJob)
         .where(ExportJob.user_id == user_id)
-        .order_by(ExportJob.create_date.desc())
+        .order_by(ExportJob.create_date.desc())  # type: ignore
     )
     return list(result.all())
 
 
-def select_export_jobs_by_user_dataset(
-    db: Session, user_id: str, dataset_id: str
+async def select_export_jobs_by_user_dataset(
+    db: AsyncSession, user_id: str, dataset_id: str
 ) -> list[ExportJob]:
-    result = db.exec(
+    result = await db.exec(
         select(ExportJob)
         .where(ExportJob.user_id == user_id, ExportJob.dataset_id == dataset_id)
-        .order_by(ExportJob.create_date.desc())
+        .order_by(ExportJob.create_date.desc())  # type: ignore
     )
     return list(result.all())

@@ -13,7 +13,7 @@ origins = ["*"]
 async def lifespan(app: FastAPI):
     logger.info("Starting service...")
     _ = app
-    init_db_models()
+    await init_db_models()
 
     yield
     logger.info("Shut down and clear cache...")

@@ -2,7 +2,7 @@ from datetime import date
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.services.storage_service import get_storage_service
 from axionara.app.utils.constant import CONSTANT
@@ -27,7 +27,7 @@ def detect_source_format(filename: str | None) -> str:
 
 
 async def create_dataset_asset(
-    db: Session,
+    db: AsyncSession,
     owner: UserAccount,
     title: str,
     description: str | None,
@@ -85,17 +85,19 @@ async def create_dataset_asset(
         file_size_bytes=stored.size,
         status=DatasetAssetStatus.UPLOADED.value,
     )
-    return insert_dataset_asset(db=db, dataset=dataset)
+    return await insert_dataset_asset(db=db, dataset=dataset)
 
 
-async def list_provider_datasets(db: Session, owner: UserAccount) -> list[DatasetAsset]:
-    return select_datasets_by_owner(db=db, owner_id=owner.id)
+async def list_provider_datasets(
+    db: AsyncSession, owner: UserAccount
+) -> list[DatasetAsset]:
+    return await select_datasets_by_owner(db=db, owner_id=owner.id)
 
 
 async def get_provider_dataset(
-    db: Session, owner: UserAccount, dataset_id: str
+    db: AsyncSession, owner: UserAccount, dataset_id: str
 ) -> DatasetAsset:
-    dataset = select_dataset_by_id(db=db, dataset_id=dataset_id)
+    dataset = await select_dataset_by_id(db=db, dataset_id=dataset_id)
     if dataset is None:
         raise HTTPException(**CONSTANT.RESP_DATASET_NOT_EXISTS)
     if dataset.owner_id != owner.id and owner.role != "admin":

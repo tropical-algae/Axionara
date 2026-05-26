@@ -1,4 +1,4 @@
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.services.dataset_qa_agent_service import DatasetQaAgentService
 from axionara.core.model.dataset import CatalogRagResponse
@@ -10,7 +10,7 @@ class CatalogRagService:
 
     async def ask(
         self,
-        db: Session,
+        db: AsyncSession,
         question: str,
         dataset_id: str | None = None,
         tag_slug: str | None = None,

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from fastapi import HTTPException
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.utils.constant import CONSTANT
 from axionara.common.util import generate_random_token
@@ -19,19 +19,19 @@ from axionara.core.model.dataset import DatasetAssetStatus
 
 
 class ReviewService:
-    def approve_dataset(
+    async def approve_dataset(
         self,
-        db: Session,
+        db: AsyncSession,
         dataset_id: str,
         reviewer: UserAccount,
         comment: str | None = None,
     ) -> DatasetReview:
-        dataset = self._get_dataset_for_review(db=db, dataset_id=dataset_id)
-        analysis = select_latest_dataset_analysis(db=db, dataset_id=dataset_id)
+        dataset = await self._get_dataset_for_review(db=db, dataset_id=dataset_id)
+        analysis = await select_latest_dataset_analysis(db=db, dataset_id=dataset_id)
         if analysis is None:
             raise HTTPException(**CONSTANT.RESP_ANALYSIS_NOT_EXISTS)
 
-        review = insert_dataset_review(
+        review = await insert_dataset_review(
             db=db,
             review=DatasetReview(
                 id=generate_random_token(prefix="REV", length=24),
@@ -44,24 +44,24 @@ class ReviewService:
             ),
         )
         dataset.status = DatasetAssetStatus.REVIEWED.value
-        update_dataset_asset(db=db, dataset=dataset)
+        await update_dataset_asset(db=db, dataset=dataset)
         return review
 
-    def reject_dataset(
+    async def reject_dataset(
         self,
-        db: Session,
+        db: AsyncSession,
         dataset_id: str,
         reviewer: UserAccount,
         comment: str | None = None,
     ) -> DatasetReview:
-        dataset = select_dataset_by_id(db=db, dataset_id=dataset_id)
+        dataset = await select_dataset_by_id(db=db, dataset_id=dataset_id)
         if dataset is None:
             raise HTTPException(**CONSTANT.RESP_DATASET_NOT_EXISTS)
-        analysis = select_latest_dataset_analysis(db=db, dataset_id=dataset_id)
+        analysis = await select_latest_dataset_analysis(db=db, dataset_id=dataset_id)
         if analysis is None:
             raise HTTPException(**CONSTANT.RESP_ANALYSIS_NOT_EXISTS)
 
-        review = insert_dataset_review(
+        review = await insert_dataset_review(
             db=db,
             review=DatasetReview(
                 id=generate_random_token(prefix="REV", length=24),
@@ -74,20 +74,20 @@ class ReviewService:
             ),
         )
         dataset.status = DatasetAssetStatus.REJECTED.value
-        update_dataset_asset(db=db, dataset=dataset)
+        await update_dataset_asset(db=db, dataset=dataset)
         return review
 
-    def publish_dataset(
+    async def publish_dataset(
         self,
-        db: Session,
+        db: AsyncSession,
         dataset_id: str,
         publisher: UserAccount,
         comment: str | None = None,
     ) -> DatasetReview:
-        dataset = select_dataset_by_id(db=db, dataset_id=dataset_id)
+        dataset = await select_dataset_by_id(db=db, dataset_id=dataset_id)
         if dataset is None:
             raise HTTPException(**CONSTANT.RESP_DATASET_NOT_EXISTS)
-        review = select_latest_dataset_review(db=db, dataset_id=dataset_id)
+        review = await select_latest_dataset_review(db=db, dataset_id=dataset_id)
         if review is None or review.review_status not in {"approved", "published"}:
             raise HTTPException(**CONSTANT.RESP_DATASET_NOT_PUBLISHABLE)
 
@@ -96,17 +96,17 @@ class ReviewService:
         review.published_at = datetime.now()
         review.reviewer_id = review.reviewer_id or publisher.id
         dataset.status = DatasetAssetStatus.PUBLISHED.value
-        update_dataset_asset(db=db, dataset=dataset)
-        return update_dataset_review(db=db, review=review)
+        await update_dataset_asset(db=db, dataset=dataset)
+        return await update_dataset_review(db=db, review=review)
 
-    def archive_dataset(
+    async def archive_dataset(
         self,
-        db: Session,
+        db: AsyncSession,
         dataset_id: str,
         reviewer: UserAccount,
         comment: str | None = None,
     ) -> DatasetReview:
-        dataset = select_dataset_by_id(db=db, dataset_id=dataset_id)
+        dataset = await select_dataset_by_id(db=db, dataset_id=dataset_id)
         if dataset is None:
             raise HTTPException(**CONSTANT.RESP_DATASET_NOT_EXISTS)
         if dataset.status not in {
@@ -114,13 +114,13 @@ class ReviewService:
             DatasetAssetStatus.REJECTED.value,
         }:
             raise HTTPException(**CONSTANT.RESP_DATASET_NOT_ARCHIVABLE)
-        analysis = select_latest_dataset_analysis(db=db, dataset_id=dataset_id)
+        analysis = await select_latest_dataset_analysis(db=db, dataset_id=dataset_id)
         if analysis is None:
             raise HTTPException(**CONSTANT.RESP_ANALYSIS_NOT_EXISTS)
 
         dataset.status = DatasetAssetStatus.ARCHIVED.value
-        update_dataset_asset(db=db, dataset=dataset)
-        return insert_dataset_review(
+        await update_dataset_asset(db=db, dataset=dataset)
+        return await insert_dataset_review(
             db=db,
             review=DatasetReview(
                 id=generate_random_token(prefix="REV", length=24),
@@ -133,20 +133,20 @@ class ReviewService:
             ),
         )
 
-    def list_reviews(
+    async def list_reviews(
         self,
-        db: Session,
+        db: AsyncSession,
         dataset_id: str | None = None,
         review_status: str | None = None,
     ) -> list[DatasetReview]:
-        return select_dataset_reviews(
+        return await select_dataset_reviews(
             db=db,
             dataset_id=dataset_id,
             review_status=review_status,
         )
 
-    def _get_dataset_for_review(self, db: Session, dataset_id: str):
-        dataset = select_dataset_by_id(db=db, dataset_id=dataset_id)
+    async def _get_dataset_for_review(self, db: AsyncSession, dataset_id: str):
+        dataset = await select_dataset_by_id(db=db, dataset_id=dataset_id)
         if dataset is None:
             raise HTTPException(**CONSTANT.RESP_DATASET_NOT_EXISTS)
         if dataset.status not in {

@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import HTTPException
 from llama_index.core.schema import Document
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.services.catalog_service import CatalogService
 from axionara.app.services.storage_service import get_storage_service
@@ -40,15 +40,15 @@ class DatasetProfileRetrievalService:
     def __init__(self):
         self.catalog = CatalogService()
 
-    def search(
+    async def search(
         self,
-        db: Session,
+        db: AsyncSession,
         question: str,
         dataset_id: str | None = None,
         tag_slug: str | None = None,
         limit: int = 3,
     ) -> list[tuple[PublicDatasetDocument, float]]:
-        documents = self._load_public_documents(
+        documents = await self._load_public_documents(
             db=db, dataset_id=dataset_id, tag_slug=tag_slug
         )
         return self._retrieve(
@@ -90,18 +90,18 @@ class DatasetProfileRetrievalService:
             ],
         }
 
-    def _load_public_documents(
-        self, db: Session, dataset_id: str | None, tag_slug: str | None
+    async def _load_public_documents(
+        self, db: AsyncSession, dataset_id: str | None, tag_slug: str | None
     ) -> list[PublicDatasetDocument]:
         if dataset_id:
-            dataset, profile, tags = self.catalog.get_published_dataset(
+            dataset, profile, tags = await self.catalog.get_published_dataset(
                 db=db, dataset_id=dataset_id
             )
             if tag_slug and not any(tag.slug == tag_slug for tag in tags):
                 return []
             rows = [(dataset, profile, tags)]
         else:
-            rows = self.catalog.list_published_datasets(db=db, tag_slug=tag_slug)
+            rows = await self.catalog.list_published_datasets(db=db, tag_slug=tag_slug)
         return [
             PublicDatasetDocument(
                 dataset=dataset,
@@ -184,15 +184,15 @@ class DatasetContentRetrievalService:
     def __init__(self):
         self.storage = get_storage_service()
 
-    def search(
+    async def search(
         self,
-        db: Session,
+        db: AsyncSession,
         dataset_id: str,
         question: str,
         user: UserAccount,
         limit: int = 5,
     ) -> list[tuple[ContentChunk, float]]:
-        dataset = self._get_authorized_dataset(
+        dataset = await self._get_authorized_dataset(
             db=db,
             dataset_id=dataset_id,
             user=user,
@@ -236,13 +236,13 @@ class DatasetContentRetrievalService:
             ],
         }
 
-    def _get_authorized_dataset(
-        self, db: Session, dataset_id: str, user: UserAccount
+    async def _get_authorized_dataset(
+        self, db: AsyncSession, dataset_id: str, user: UserAccount
     ) -> DatasetAsset:
-        dataset = select_dataset_by_id(db=db, dataset_id=dataset_id)
+        dataset = await select_dataset_by_id(db=db, dataset_id=dataset_id)
         if dataset is None or dataset.status != DatasetAssetStatus.PUBLISHED.value:
             raise HTTPException(**CONSTANT.RESP_DATASET_NOT_EXISTS)
-        grant = select_active_access_grant(
+        grant = await select_active_access_grant(
             db=db,
             dataset_id=dataset_id,
             user_id=user.id,

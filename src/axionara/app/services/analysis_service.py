@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from fastapi import HTTPException
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.services.storage_service import get_storage_service
 from axionara.app.utils.constant import CONSTANT
@@ -49,15 +49,15 @@ class AnalysisOrchestrator:
         self.capabilities = ExportCapabilityEvaluator()
         self.summary_tags = SummaryTagGenerator()
 
-    def run_dataset_analysis(
+    async def run_dataset_analysis(
         self,
-        db: Session,
+        db: AsyncSession,
         dataset_id: str,
         triggered_by: UserAccount,
         use_llm: bool = False,
     ) -> AnalysisJob:
-        dataset = self._get_dataset(db=db, dataset_id=dataset_id)
-        job = insert_analysis_job(
+        dataset = await self._get_dataset(db=db, dataset_id=dataset_id)
+        job = await insert_analysis_job(
             db=db,
             job=AnalysisJob(
                 id=generate_random_token(prefix="JOB", length=24),
@@ -71,7 +71,7 @@ class AnalysisOrchestrator:
 
         try:
             dataset.status = DatasetAssetStatus.PROCESSING_REVIEW.value
-            update_dataset_asset(db=db, dataset=dataset)
+            await update_dataset_asset(db=db, dataset=dataset)
 
             content = self.storage.get_bytes(
                 bucket=dataset.raw_bucket or "",
@@ -82,30 +82,30 @@ class AnalysisOrchestrator:
             )
 
             job.current_stage = "cleaning"
-            update_analysis_job(db=db, job=job)
+            await update_analysis_job(db=db, job=job)
             cleaned = self.cleaner.clean(parsed=parsed)
 
             job.current_stage = "sensitivity"
-            update_analysis_job(db=db, job=job)
+            await update_analysis_job(db=db, job=job)
             sensitivity_report = self.sensitivity.scan_sensitive_content(
                 dataset=dataset, parsed=parsed
             )
 
             job.current_stage = "statistics"
-            update_analysis_job(db=db, job=job)
+            await update_analysis_job(db=db, job=job)
             statistics = self.statistics.build(
                 dataset=dataset, parsed=parsed, cleaned=cleaned
             )
 
             job.current_stage = "capability"
-            update_analysis_job(db=db, job=job)
+            await update_analysis_job(db=db, job=job)
             export_capabilities = self.capabilities.evaluate(
                 dataset=dataset, parsed=parsed, cleaned=cleaned
             )
 
             job.current_stage = "summary"
-            update_analysis_job(db=db, job=job)
-            summary_result = self.summary_tags.generate(
+            await update_analysis_job(db=db, job=job)
+            summary_result = await self.summary_tags.generate(
                 dataset=dataset,
                 statistics=statistics,
                 cleaning_actions=cleaned.cleaning_actions,
@@ -115,8 +115,8 @@ class AnalysisOrchestrator:
             )
 
             job.current_stage = "persist"
-            update_analysis_job(db=db, job=job)
-            analysis = insert_dataset_analysis(
+            await update_analysis_job(db=db, job=job)
+            analysis = await insert_dataset_analysis(
                 db=db,
                 analysis=DatasetAnalysis(
                     id=generate_random_token(prefix="ANA", length=24),
@@ -141,7 +141,7 @@ class AnalysisOrchestrator:
                     llm_output_json=summary_result.llm_output_json,
                 ),
             )
-            upsert_dataset_profile(
+            await upsert_dataset_profile(
                 db=db,
                 profile=DatasetProfile(
                     id=generate_random_token(prefix="PRO", length=24),
@@ -160,7 +160,7 @@ class AnalysisOrchestrator:
                     ),
                 ),
             )
-            self._persist_tags(
+            await self._persist_tags(
                 db=db,
                 dataset=dataset,
                 analysis=analysis,
@@ -169,74 +169,78 @@ class AnalysisOrchestrator:
 
             dataset.status = DatasetAssetStatus.REVIEWED.value
             dataset.representation_hint = parsed.representation_type
-            update_dataset_asset(db=db, dataset=dataset)
+            await update_dataset_asset(db=db, dataset=dataset)
             job.job_status = "succeeded"
             job.current_stage = "done"
             job.finished_at = datetime.now()
-            return update_analysis_job(db=db, job=job)
+            return await update_analysis_job(db=db, job=job)
         except Exception as err:
             job.job_status = "failed"
             job.error_message = str(err)
             job.finished_at = datetime.now()
-            update_analysis_job(db=db, job=job)
+            await update_analysis_job(db=db, job=job)
             raise
 
-    def get_latest_analysis(self, db: Session, dataset_id: str) -> DatasetAnalysis:
-        analysis = select_latest_dataset_analysis(db=db, dataset_id=dataset_id)
+    async def get_latest_analysis(
+        self, db: AsyncSession, dataset_id: str
+    ) -> DatasetAnalysis:
+        analysis = await select_latest_dataset_analysis(db=db, dataset_id=dataset_id)
         if analysis is None:
             raise HTTPException(**CONSTANT.RESP_ANALYSIS_NOT_EXISTS)
         return analysis
 
-    def list_analysis_jobs(
+    async def list_analysis_jobs(
         self,
-        db: Session,
+        db: AsyncSession,
         dataset_id: str | None = None,
         job_status: str | None = None,
     ) -> list[AnalysisJob]:
-        return select_analysis_jobs(db=db, dataset_id=dataset_id, job_status=job_status)
+        return await select_analysis_jobs(
+            db=db, dataset_id=dataset_id, job_status=job_status
+        )
 
-    def get_analysis_job(self, db: Session, job_id: str) -> AnalysisJob:
-        job = select_analysis_job_by_id(db=db, job_id=job_id)
+    async def get_analysis_job(self, db: AsyncSession, job_id: str) -> AnalysisJob:
+        job = await select_analysis_job_by_id(db=db, job_id=job_id)
         if job is None:
             raise HTTPException(**CONSTANT.RESP_ANALYSIS_JOB_NOT_EXISTS)
         return job
 
-    def retry_analysis_job(
+    async def retry_analysis_job(
         self,
-        db: Session,
+        db: AsyncSession,
         job_id: str,
         triggered_by: UserAccount,
         use_llm: bool = False,
     ) -> AnalysisJob:
-        job = self.get_analysis_job(db=db, job_id=job_id)
+        job = await self.get_analysis_job(db=db, job_id=job_id)
         if job.job_status != "failed":
             raise HTTPException(**CONSTANT.RESP_ANALYSIS_JOB_NOT_RETRYABLE)
-        return self.run_dataset_analysis(
+        return await self.run_dataset_analysis(
             db=db,
             dataset_id=job.dataset_id,
             triggered_by=triggered_by,
             use_llm=use_llm,
         )
 
-    def _get_dataset(self, db: Session, dataset_id: str) -> DatasetAsset:
-        dataset = select_dataset_by_id(db=db, dataset_id=dataset_id)
+    async def _get_dataset(self, db: AsyncSession, dataset_id: str) -> DatasetAsset:
+        dataset = await select_dataset_by_id(db=db, dataset_id=dataset_id)
         if dataset is None:
             raise HTTPException(**CONSTANT.RESP_DATASET_NOT_EXISTS)
         return dataset
 
-    def _persist_tags(
+    async def _persist_tags(
         self,
-        db: Session,
+        db: AsyncSession,
         dataset: DatasetAsset,
         analysis: DatasetAnalysis,
         suggested_tags: dict,
     ) -> None:
         for item in suggested_tags.get("items", []):
-            tag = select_tag_by_slug_category(
+            tag = await select_tag_by_slug_category(
                 db=db, slug=item["slug"], category=item["category"]
             )
             if tag is None:
-                tag = insert_tag(
+                tag = await insert_tag(
                     db=db,
                     tag=Tag(
                         id=generate_random_token(prefix="TAG", length=24),
@@ -246,7 +250,7 @@ class AnalysisOrchestrator:
                         source=item.get("source", "system"),
                     ),
                 )
-            insert_dataset_tag(
+            await insert_dataset_tag(
                 db=db,
                 dataset_tag=DatasetTag(
                     id=generate_random_token(prefix="DTA", length=24),
