@@ -52,6 +52,7 @@ jobs:
 
   publish:
     runs-on: ubuntu-latest
+    environment: release
     needs: release
     if: needs.release.outputs.released == 'true'
 
