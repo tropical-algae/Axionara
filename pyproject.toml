@@ -9,7 +9,7 @@ license = "MIT"
 dependencies = [
   "fastapi>=0.112.0,<0.113",
   "uvicorn==0.48.0",
-  "pydantic[email]>=2.9.2,<3",
+  "pydantic[email]>=2.13.4,<3",
   "requests>=2.32.0,<3",
   "loguru>=0.7.0,<0.8",
   "pydantic-settings>=2.4.0,<3",
