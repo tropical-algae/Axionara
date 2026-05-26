@@ -3,6 +3,7 @@ executor.type = "uv"
 [tasks]
 _install = { shell = "uv sync --dev --frozen" }
 _test = { shell = "pytest tests" }
+_check = { shell = 'ruff check .' }
 _fix = { shell = 'ruff check . --fix' }
 _lint = { shell = "mypy ./src" }
 _format = { shell = "ruff format ." }
@@ -29,6 +30,10 @@ ignore_fail = false
 [tasks.test]
 help = "Run tests quickly using the default Python environment."
 sequence = ["_test"]
+
+[tasks.test-ci]
+help = "Run tests ci quickly using the default Python environment."
+sequence = ["_check", "_lint", "_test"]
 
 
 [tasks.check-test]
