@@ -1,5 +1,13 @@
 <!-- version list -->
 
+## v0.0.3 (2026-05-26)
+
+### Chores
+
+- Run docker publish as release workflow job
+  ([`40e871e`](https://github.com/tropical-algae/Axionara/commit/40e871ebf9b620e6bf8fe7ebfe7c87ef4fdeeb0a))
+
+
 ## v0.0.2 (2026-05-26)
 
 ### Bug Fixes
