@@ -53,7 +53,7 @@ dev = [
   "pre-commit>=4.3.0,<5",
   "poethepoet>=0.37.0",
 ]
-release = ["python-semantic-release>=10.3.1,<11"]
+release = ["python-semantic-release>=10.5.3,<11"]
 aws = ["mangum>=0.17.0,<0.18"]
 
 [tool.uv]
