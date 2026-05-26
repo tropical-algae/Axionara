@@ -74,5 +74,5 @@ class MinioStorageService(StorageService):
                     "error": None,
                 }
             except Exception as err:  # noqa: PERF203
-                bucket_status[bucket] = {"exists": False, "error": str(err)}
+                bucket_status[bucket] = {"exists": False, "error": str(err)}  # type: ignore
         return {"buckets": bucket_status}

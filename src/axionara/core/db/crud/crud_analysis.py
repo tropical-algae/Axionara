@@ -40,7 +40,7 @@ def select_analysis_jobs(
         statement = statement.where(AnalysisJob.dataset_id == dataset_id)
     if job_status is not None:
         statement = statement.where(AnalysisJob.job_status == job_status)
-    result = db.exec(statement.order_by(AnalysisJob.create_date.desc()))
+    result = db.exec(statement.order_by(AnalysisJob.create_date.desc()))  # type: ignore
     return list(result.all())
 
 
@@ -80,7 +80,7 @@ def select_dataset_reviews(
         statement = statement.where(DatasetReview.dataset_id == dataset_id)
     if review_status is not None:
         statement = statement.where(DatasetReview.review_status == review_status)
-    result = db.exec(statement.order_by(DatasetReview.create_date.desc()))
+    result = db.exec(statement.order_by(DatasetReview.create_date.desc()))  # type: ignore
     return list(result.all())
 
 
@@ -88,7 +88,7 @@ def select_latest_dataset_review(db: Session, dataset_id: str) -> DatasetReview 
     result = db.exec(
         select(DatasetReview)
         .where(DatasetReview.dataset_id == dataset_id)
-        .order_by(DatasetReview.create_date.desc())
+        .order_by(DatasetReview.create_date.desc())  # type: ignore
     )
     return result.first()
 
@@ -123,7 +123,7 @@ def select_latest_dataset_analysis(
     result = db.exec(
         select(DatasetAnalysis)
         .where(DatasetAnalysis.dataset_id == dataset_id)
-        .order_by(DatasetAnalysis.create_date.desc())
+        .order_by(DatasetAnalysis.create_date.desc())  # type: ignore
     )
     return result.first()
 

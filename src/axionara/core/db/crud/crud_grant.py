@@ -27,7 +27,7 @@ def select_access_grants_by_user(db: Session, user_id: str) -> list[AccessGrant]
     result = db.exec(
         select(AccessGrant)
         .where(AccessGrant.user_id == user_id, AccessGrant.grant_status == "granted")
-        .order_by(AccessGrant.granted_at.desc())
+        .order_by(AccessGrant.granted_at.desc())  # type: ignore
     )
     return list(result.all())
 
@@ -55,7 +55,7 @@ def select_export_jobs_by_user(db: Session, user_id: str) -> list[ExportJob]:
     result = db.exec(
         select(ExportJob)
         .where(ExportJob.user_id == user_id)
-        .order_by(ExportJob.create_date.desc())
+        .order_by(ExportJob.create_date.desc())  # type: ignore
     )
     return list(result.all())
 
@@ -66,6 +66,6 @@ def select_export_jobs_by_user_dataset(
     result = db.exec(
         select(ExportJob)
         .where(ExportJob.user_id == user_id, ExportJob.dataset_id == dataset_id)
-        .order_by(ExportJob.create_date.desc())
+        .order_by(ExportJob.create_date.desc())  # type: ignore
     )
     return list(result.all())
