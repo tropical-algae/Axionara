@@ -2,8 +2,9 @@
   <section class="home-hero page-grid">
     <div class="hero-copy">
       <span class="eyebrow">DATA REFINERY / AGENTIC INTELLIGENCE</span>
-      <h1>把原始数据炼成可交易、可审查、可问答的资产。</h1>
-      <p>Axionara 将上传、解析、清洗、风险审查、发布、授权、导出和 AI Agent 问答压缩进一个可运营的数据要素控制面。</p>
+      <h1>把原始数据炼成可交易、可审查、可问答的资产</h1>
+      <p>Axionara 将上传、解析、清洗、风险审查、发布、授权、规范化导出，全部压缩进一个可运营的数据要素控制面板</p>
+      <p>基于 Agent 的知识问答，让你轻松掌握全部</p>
       <div class="hero-actions">
         <RouterLink class="primary-action" to="/catalog">进入数据市场</RouterLink>
         <RouterLink class="secondary-action" to="/register">创建角色身份</RouterLink>
