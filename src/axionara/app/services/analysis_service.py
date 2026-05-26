@@ -105,7 +105,7 @@ class AnalysisOrchestrator:
 
             job.current_stage = "summary"
             await update_analysis_job(db=db, job=job)
-            summary_result = self.summary_tags.generate(
+            summary_result = await self.summary_tags.generate(
                 dataset=dataset,
                 statistics=statistics,
                 cleaning_actions=cleaned.cleaning_actions,
