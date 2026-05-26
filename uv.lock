@@ -393,7 +393,7 @@ requires-dist = [
     { name = "json-repair", specifier = ">=0.55.0" },
     { name = "llama-index", specifier = ">=0.14.22" },
     { name = "loguru", specifier = ">=0.7.0,<0.8" },
-    { name = "markitdown", extras = ["pdf"], specifier = ">=0.1.4,<0.2" },
+    { name = "markitdown", extras = ["pdf"], specifier = ">=0.1.5,<0.2" },
     { name = "minio", specifier = ">=7.2.0,<8" },
     { name = "openpyxl", specifier = ">=3.1.5,<4" },
     { name = "passlib", specifier = ">=1.7.4,<2" },
