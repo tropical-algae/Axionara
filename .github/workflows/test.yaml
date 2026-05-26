@@ -1,0 +1,25 @@
+name: Test Project
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      PYTHON_VERSION: "3.11"
+      UV_VERSION: "0.9.7"
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install UV
+        run: |
+          pip install uv==${{ env.UV_VERSION }}
+          uv sync --dev --frozen
+      - name: Run Tests
+        run: uv run poe test-ci
