@@ -1,6 +1,6 @@
 import json_repair
 from fastapi import HTTPException
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.services.inference_service import dataset_qa_agent_response
 from axionara.common.config import settings
@@ -19,7 +19,7 @@ from axionara.core.prompt import load_prompt
 class DatasetQaAgentService:
     async def ask_public_profiles(
         self,
-        db: Session,
+        db: AsyncSession,
         question: str,
         dataset_id: str | None = None,
         tag_slug: str | None = None,
@@ -48,7 +48,7 @@ class DatasetQaAgentService:
 
     async def ask_authorized_content(
         self,
-        db: Session,
+        db: AsyncSession,
         dataset_id: str,
         question: str,
         user: UserAccount,

@@ -1,8 +1,8 @@
-from collections.abc import Generator
+from collections.abc import AsyncGenerator
 
 from fastapi import Depends, HTTPException, Security
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.utils.constant import CONSTANT
 from axionara.app.utils.security import verift_access_token
@@ -26,26 +26,21 @@ reusable_oauth2 = OAuth2PasswordBearer(
 )
 
 
-def get_db() -> Generator[Session, None, None]:
-    db = None
-    try:
-        db = local_session()
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with local_session() as db:
         yield db
-    finally:
-        if db:
-            db.close()
 
 
 async def get_current_user(
     security_scopes: SecurityScopes,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     token: str = Depends(reusable_oauth2),
 ) -> UserAccount:
     headers = {AUTHENTICATE_HEADER: "Bearer"}
     if security_scopes.scopes:
         headers = {AUTHENTICATE_HEADER: f'Bearer scope="{security_scopes.scope_str}"'}
     payload = verift_access_token(token=token, headers=headers)
-    user = select_user_by_id(db=db, user_id=payload.userid)
+    user = await select_user_by_id(db=db, user_id=payload.userid)
     if user is None:
         raise HTTPException(headers=headers, **CONSTANT.RESP_USER_NOT_EXISTS)
     if len(security_scopes.scopes) != 0 and not payload.match_scope(

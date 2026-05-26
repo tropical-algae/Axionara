@@ -4,7 +4,7 @@ from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any
 
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.core.db.models import UserAccount
 from axionara.core.model.dataset import CatalogRagMatch, ContentRagMatch
@@ -23,7 +23,7 @@ DATASET_QA_TOOL_INFO_NAMES = [
 @dataclass
 class DatasetQaToolContext:
     request_scope: str
-    db: Session
+    db: AsyncSession
     question: str
     limit: int
     dataset_id: str | None = None

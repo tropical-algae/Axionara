@@ -8,7 +8,7 @@ from typing import Any
 
 from fastapi import HTTPException, Response
 from openpyxl import load_workbook
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.services.storage_service import get_storage_service
 from axionara.app.utils.constant import CONSTANT
@@ -33,20 +33,22 @@ class ExportService:
     def __init__(self):
         self.storage = get_storage_service()
 
-    def create_export_job(
-        self, db: Session, dataset_id: str, target_format: str, user: UserAccount
+    async def create_export_job(
+        self, db: AsyncSession, dataset_id: str, target_format: str, user: UserAccount
     ) -> ExportJob:
-        dataset = self._get_published_dataset(db=db, dataset_id=dataset_id)
-        grant = select_active_access_grant(db=db, dataset_id=dataset_id, user_id=user.id)
+        dataset = await self._get_published_dataset(db=db, dataset_id=dataset_id)
+        grant = await select_active_access_grant(
+            db=db, dataset_id=dataset_id, user_id=user.id
+        )
         if grant is None:
             raise HTTPException(**CONSTANT.RESP_ACCESS_GRANT_NOT_EXISTS)
 
-        profile = select_dataset_profile_by_dataset_id(db=db, dataset_id=dataset_id)
+        profile = await select_dataset_profile_by_dataset_id(db=db, dataset_id=dataset_id)
         allowed_formats = profile.allowed_export_formats if profile is not None else []
         if target_format not in allowed_formats:
             raise HTTPException(**CONSTANT.RESP_EXPORT_FORMAT_UNSUPPORTED)
 
-        return insert_export_job(
+        return await insert_export_job(
             db=db,
             job=ExportJob(
                 id=generate_random_token(prefix="EXP", length=24),
@@ -58,13 +60,13 @@ class ExportService:
             ),
         )
 
-    def process_export_job(self, db: Session, job_id: str) -> ExportJob:
-        job = self._get_export_job(db=db, job_id=job_id)
-        dataset = self._get_published_dataset(db=db, dataset_id=job.dataset_id)
+    async def process_export_job(self, db: AsyncSession, job_id: str) -> ExportJob:
+        job = await self._get_export_job(db=db, job_id=job_id)
+        dataset = await self._get_published_dataset(db=db, dataset_id=job.dataset_id)
 
         job.job_status = ExportJobStatus.RUNNING.value
         job.started_at = datetime.now()
-        update_export_job(db=db, job=job)
+        await update_export_job(db=db, job=job)
 
         try:
             artifact = self._build_export_artifact(
@@ -91,42 +93,48 @@ class ExportService:
             job.output_size_bytes = len(artifact["content"])
             job.job_status = ExportJobStatus.SUCCEEDED.value
             job.finished_at = datetime.now()
-            return update_export_job(db=db, job=job)
+            return await update_export_job(db=db, job=job)
         except Exception as err:
             job.job_status = ExportJobStatus.FAILED.value
             job.error_message = str(err)
             job.finished_at = datetime.now()
-            update_export_job(db=db, job=job)
+            await update_export_job(db=db, job=job)
             raise
 
-    def list_my_export_jobs(
-        self, db: Session, user: UserAccount, dataset_id: str | None = None
+    async def list_my_export_jobs(
+        self, db: AsyncSession, user: UserAccount, dataset_id: str | None = None
     ) -> list[ExportJob]:
         if dataset_id is not None:
-            return select_export_jobs_by_user_dataset(
+            return await select_export_jobs_by_user_dataset(
                 db=db, user_id=user.id, dataset_id=dataset_id
             )
-        return select_export_jobs_by_user(db=db, user_id=user.id)
+        return await select_export_jobs_by_user(db=db, user_id=user.id)
 
-    def get_my_export_job(self, db: Session, job_id: str, user: UserAccount) -> ExportJob:
-        job = self._get_export_job(db=db, job_id=job_id)
+    async def get_my_export_job(
+        self, db: AsyncSession, job_id: str, user: UserAccount
+    ) -> ExportJob:
+        job = await self._get_export_job(db=db, job_id=job_id)
         if job.user_id != user.id:
             raise HTTPException(**CONSTANT.RESP_DATASET_FORBIDDEN)
         return job
 
-    def retry_export_job(self, db: Session, job_id: str, user: UserAccount) -> ExportJob:
-        job = self.get_my_export_job(db=db, job_id=job_id, user=user)
+    async def retry_export_job(
+        self, db: AsyncSession, job_id: str, user: UserAccount
+    ) -> ExportJob:
+        job = await self.get_my_export_job(db=db, job_id=job_id, user=user)
         if job.job_status != ExportJobStatus.FAILED.value:
             raise HTTPException(**CONSTANT.RESP_EXPORT_JOB_NOT_RETRYABLE)
-        return self.create_export_job(
+        return await self.create_export_job(
             db=db,
             dataset_id=job.dataset_id,
             target_format=job.target_format,
             user=user,
         )
 
-    def download_export(self, db: Session, job_id: str, user: UserAccount) -> Response:
-        job = self.get_my_export_job(db=db, job_id=job_id, user=user)
+    async def download_export(
+        self, db: AsyncSession, job_id: str, user: UserAccount
+    ) -> Response:
+        job = await self.get_my_export_job(db=db, job_id=job_id, user=user)
         if (
             job.job_status != ExportJobStatus.SUCCEEDED.value
             or job.output_bucket is None
@@ -291,19 +299,21 @@ class ExportService:
     ) -> str:
         return f"exports/{dataset.id}/{job.id}/{filename}"
 
-    def _get_export_job(self, db: Session, job_id: str) -> ExportJob:
-        job = select_export_job_by_id(db=db, job_id=job_id)
+    async def _get_export_job(self, db: AsyncSession, job_id: str) -> ExportJob:
+        job = await select_export_job_by_id(db=db, job_id=job_id)
         if job is None:
             raise HTTPException(**CONSTANT.RESP_EXPORT_JOB_NOT_EXISTS)
         return job
 
-    def _get_published_dataset(self, db: Session, dataset_id: str) -> DatasetAsset:
-        dataset = select_dataset_by_id(db=db, dataset_id=dataset_id)
+    async def _get_published_dataset(
+        self, db: AsyncSession, dataset_id: str
+    ) -> DatasetAsset:
+        dataset = await select_dataset_by_id(db=db, dataset_id=dataset_id)
         if dataset is None or dataset.status != DatasetAssetStatus.PUBLISHED.value:
             raise HTTPException(**CONSTANT.RESP_DATASET_NOT_EXISTS)
         return dataset
 
 
-def process_export_job_background(job_id: str) -> None:
-    with local_session() as db:
-        ExportService().process_export_job(db=db, job_id=job_id)
+async def process_export_job_background(job_id: str) -> None:
+    async with local_session() as db:
+        await ExportService().process_export_job(db=db, job_id=job_id)

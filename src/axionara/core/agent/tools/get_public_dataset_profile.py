@@ -50,7 +50,7 @@ class GetPublicDatasetProfileTool(ToolBase):
             )
         normalized_question = (question or context.question).strip()
         service = DatasetProfileRetrievalService()
-        matches = service.search(
+        matches = await service.search(
             db=context.db,
             question=normalized_question,
             dataset_id=resolved_dataset_id,

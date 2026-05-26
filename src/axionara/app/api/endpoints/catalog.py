@@ -1,7 +1,7 @@
 from typing import Any
 
 from fastapi import APIRouter, Depends, Security
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.api.deps import get_current_user, get_db
 from axionara.app.services.access_service import AccessService
@@ -28,9 +28,9 @@ async def list_catalog_datasets(
     category: str | None = None,
     source_format: str | None = None,
     keyword: str | None = None,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
-    rows = CatalogService().list_published_datasets(
+    rows = await CatalogService().list_published_datasets(
         db=db,
         tag_slug=tag_slug,
         category=category,
@@ -50,9 +50,9 @@ async def list_catalog_datasets(
 @router.get("/datasets/{dataset_id}", response_model=CatalogDatasetRead)
 async def catalog_dataset_detail(
     dataset_id: str,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
-    dataset, profile, tags = CatalogService().get_published_dataset(
+    dataset, profile, tags = await CatalogService().get_published_dataset(
         db=db, dataset_id=dataset_id
     )
     return CatalogDatasetRead(
@@ -63,14 +63,14 @@ async def catalog_dataset_detail(
 
 
 @router.get("/tags", response_model=list[TagRead])
-async def list_catalog_tags(db: Session = Depends(get_db)) -> Any:
-    return CatalogService().list_tags(db=db)
+async def list_catalog_tags(db: AsyncSession = Depends(get_db)) -> Any:
+    return await CatalogService().list_tags(db=db)
 
 
 @router.post("/ask", response_model=CatalogRagResponse)
 async def ask_catalog_dataset_profiles(
     request: CatalogRagRequest,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     return await CatalogRagService().ask(
         db=db,
@@ -85,7 +85,7 @@ async def ask_catalog_dataset_profiles(
 async def ask_catalog_dataset_profile(
     dataset_id: str,
     request: CatalogRagRequest,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     return await CatalogRagService().ask(
         db=db,
@@ -102,8 +102,8 @@ async def acquire_catalog_dataset(
     current_user: UserAccount = Security(
         get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
     ),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
-    return AccessService().acquire_dataset(
+    return await AccessService().acquire_dataset(
         db=db, dataset_id=dataset_id, user=current_user
     )

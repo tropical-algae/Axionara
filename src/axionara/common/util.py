@@ -15,7 +15,7 @@ TOKEN_SEQUENCE = string.ascii_uppercase + string.digits
 
 async def async_db_wrapper(func: Callable, *args, **kwargs) -> Any:
     try:
-        with local_session() as db:
+        async with local_session() as db:
             return await func(*args, db=db, **kwargs)
     except Exception:
         return None
