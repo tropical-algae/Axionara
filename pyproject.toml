@@ -1,6 +1,6 @@
 [project]
 name = "Axionara"
-version = "0.1.0"
+version = "0.0.1"
 description = "一个支撑政务数据的可信数据基座，用于跨部门协同与价值挖掘"
 authors = [{ name = "tropical-algae", email = "tropicalalgae@gmail.com" }]
 requires-python = ">=3.11"
@@ -36,6 +36,7 @@ dependencies = [
 [project.urls]
 Repository = "https://github.com/tropical-algae/Axionara.git"
 
+
 [dependency-groups]
 dev = [
   "pytest~=8.4.2",
@@ -62,6 +63,7 @@ default-groups = ["dev", "release", "aws"]
 name = "proxy-source"
 url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 
+
 [tool.hatch.build.targets.sdist]
 include = ["src/axionara"]
 
@@ -71,13 +73,10 @@ include = ["src/axionara"]
 [tool.hatch.build.targets.wheel.sources]
 "src/axionara" = "axionara"
 
+
 [tool.poe]
 include = "poe_tasks.toml"
 
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
 
 [tool.black]
 line-length = 88
@@ -93,3 +92,8 @@ exclude = '''
   |Jenkinfile
 )/
 '''
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
