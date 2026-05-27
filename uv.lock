@@ -432,7 +432,7 @@ dev = [
     { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "pytest-ordering", specifier = ">=0.6,<0.7" },
     { name = "ruff", specifier = ">=0.15.14,<0.16" },
-    { name = "sqlacodegen", specifier = "==3.0.0rc5" },
+    { name = "sqlacodegen", specifier = "==4.0.3" },
     { name = "types-pytz", specifier = ">=2026.2.0.20260518,<2027" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20260518,<7" },
 ]
@@ -3499,15 +3499,15 @@ wheels = [
 
 [[package]]
 name = "sqlacodegen"
-version = "3.0.0rc5"
+version = "4.0.3"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
 dependencies = [
     { name = "inflect" },
     { name = "sqlalchemy" },
 ]
-sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/9d/b7/77d652cfa405107d4c47c4bd9036cc6c71ae4539030cc57df154e070e551/sqlacodegen-3.0.0rc5.tar.gz", hash = "sha256:7dbc0e4c6e1cdc91d016192942d66eb8922bc4080a76d6e03866ba4ef8eb56f6", size = 38440, upload-time = "2024-02-22T08:54:14.271Z" }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/da/3e/80c6dabef1669a2bf9b75a565087b995e7d35c014598ed19d9e11e0eb7c8/sqlacodegen-4.0.3.tar.gz", hash = "sha256:7e696456e85a1d9e0b1841b685d667e1a18ab0a5318788929f4ec3349393b45f", size = 55350, upload-time = "2026-03-19T18:45:42.28Z" }
 wheels = [
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/ea/69/9cc050fe53efe6055d68afb7a6be0b5a4ffff1adf828fa15be5e30d0cae9/sqlacodegen-3.0.0rc5-py3-none-any.whl", hash = "sha256:1fd84a6fc4bff701f396016b5d639a2cdf264ff433ac7a37755909e13d2240d5", size = 21381, upload-time = "2024-02-22T08:54:12.679Z" },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/e4/1f/5981cf2b3e1b4e55bf03a0e24230868b6138b7e3aac6a6ffd4a1f5de03cf/sqlacodegen-4.0.3-py3-none-any.whl", hash = "sha256:3f8c955c7a137ad1bccb3238f66afb690b75b0eadb32fb46a179c6065cab83c6", size = 27753, upload-time = "2026-03-19T18:45:40.72Z" },
 ]
 
 [[package]]
