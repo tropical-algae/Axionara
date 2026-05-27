@@ -50,6 +50,9 @@ export const useAdminStore = defineStore("admin", {
     action(datasetId: string, action: "approve" | "reject" | "publish" | "archive", comment?: string) {
       return adminApi[action](datasetId, comment);
     },
+    jobDetail(jobId: string) {
+      return adminApi.jobDetail(jobId);
+    },
     retryJob(jobId: string) {
       return adminApi.retryJob(jobId, true);
     }

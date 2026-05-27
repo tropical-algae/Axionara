@@ -85,6 +85,7 @@ export const adminApi = {
   publish: (datasetId: string, comment?: string) => api.post<DatasetReview>(`/api/v1/admin/datasets/${datasetId}/publish`, { comment }),
   archive: (datasetId: string, comment?: string) => api.post<DatasetReview>(`/api/v1/admin/datasets/${datasetId}/archive`, { comment }),
   jobs: (filters?: { dataset_id?: string; job_status?: string }) => api.get<AnalysisJob[]>("/api/v1/admin/analysis-jobs", filters),
+  jobDetail: (jobId: string) => api.get<AnalysisJob>(`/api/v1/admin/analysis-jobs/${jobId}`),
   retryJob: (jobId: string, use_llm = true) => api.post<AnalysisJob>(`/api/v1/admin/analysis-jobs/${jobId}/retry`, undefined, { use_llm }),
   reviews: (filters?: { dataset_id?: string; review_status?: string }) => api.get<DatasetReview[]>("/api/v1/admin/reviews", filters)
 };
