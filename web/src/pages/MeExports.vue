@@ -1,6 +1,12 @@
 <template>
   <section class="ops-layout page-grid">
-    <header class="section-header span-all"><div><span class="eyebrow">EXPORT OPERATIONS</span><h1>导出任务</h1></div></header>
+    <header class="section-header span-all">
+      <div>
+        <RouterLink class="back-link" to="/me"><ArrowLeft :size="16" />返回我的数据</RouterLink>
+        <span class="eyebrow">EXPORT OPERATIONS</span>
+        <h1>导出任务</h1>
+      </div>
+    </header>
     <main class="ops-board span-all">
       <EmptyState v-if="!me.exports.length" title="暂无导出任务" description="在授权数据详情页选择格式后会生成任务。" />
       <div v-else class="asset-list">
@@ -17,6 +23,7 @@
 
 <script setup lang="ts">
 import { onMounted } from "vue";
+import { ArrowLeft } from "lucide-vue-next";
 
 import EmptyState from "@/components/EmptyState.vue";
 import StatusBadge from "@/components/StatusBadge.vue";

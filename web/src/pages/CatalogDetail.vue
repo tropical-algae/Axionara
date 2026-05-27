@@ -3,13 +3,13 @@
     <LoadingState v-if="catalog.loading" />
     <template v-else-if="item">
       <header class="detail-hero">
-        <RouterLink class="inline-link" to="/catalog">返回市场</RouterLink>
+        <RouterLink class="back-link" to="/catalog"><ArrowLeft :size="16" />返回数据市场</RouterLink>
         <div>
           <span class="eyebrow">{{ item.dataset.source_format?.toUpperCase() }} / {{ stats.representation }}</span>
           <h1>{{ item.dataset.title }}</h1>
           <p>{{ item.profile?.public_summary || item.dataset.description || "该数据资产暂无公开摘要。" }}</p>
         </div>
-        <button class="primary-action" type="button" @click="acquire">获取数据</button>
+        <button class="primary-action" type="button" :disabled="acquiring" @click="confirmOpen = true">{{ acquiring ? "获取中..." : "获取数据" }}</button>
       </header>
 
       <aside class="detail-side">
@@ -74,14 +74,24 @@
         <RouterLink class="primary-action" to="/catalog">返回数据市场</RouterLink>
       </div>
     </section>
+    <ConfirmDialog
+      :open="confirmOpen"
+      title="获取数据授权"
+      description="确认后系统会为你创建该数据资产的访问授权，并跳转到我的数据详情页。"
+      confirm-label="确认获取"
+      :busy="acquiring"
+      @close="confirmOpen = false"
+      @confirm="acquire"
+    />
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
-import { useRoute } from "vue-router";
-import { MessageSquareText } from "lucide-vue-next";
+import { computed, onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { ArrowLeft, MessageSquareText } from "lucide-vue-next";
 
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import LoadingState from "@/components/LoadingState.vue";
 import MetricTile from "@/components/MetricTile.vue";
 import StatusBadge from "@/components/StatusBadge.vue";
@@ -91,15 +101,26 @@ import { useCatalogStore } from "@/stores/catalog";
 import { useUiStore } from "@/stores/ui";
 
 const route = useRoute();
+const router = useRouter();
 const catalog = useCatalogStore();
 const ui = useUiStore();
+const confirmOpen = ref(false);
+const acquiring = ref(false);
 const item = computed(() => catalog.detail);
 const stats = computed(() => normalizePublicStatistics(item.value?.profile?.public_statistics));
 const formats = computed(() => item.value?.profile?.allowed_export_formats?.join(" / ") || "按权限开放");
 const metadataRows = computed(() => publicMetadataRows(item.value?.dataset));
 
 async function acquire() {
-  if (item.value) await catalog.acquire(item.value.dataset.id);
+  if (!item.value) return;
+  acquiring.value = true;
+  try {
+    await catalog.acquire(item.value.dataset.id);
+    confirmOpen.value = false;
+    router.push(`/me/datasets/${item.value.dataset.id}`);
+  } finally {
+    acquiring.value = false;
+  }
 }
 
 onMounted(async () => {
