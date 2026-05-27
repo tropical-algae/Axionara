@@ -5,7 +5,7 @@
         <section class="modal-panel">
           <header>
             <strong>{{ title }}</strong>
-            <button type="button" @click="$emit('close')"><X :size="18" /></button>
+            <button class="icon-text modal-close" type="button" @click="$emit('close')"><X :size="18" /></button>
           </header>
           <slot />
         </section>
