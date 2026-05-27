@@ -339,7 +339,7 @@ wheels = [
 
 [[package]]
 name = "axionara"
-version = "0.0.1"
+version = "0.0.4"
 source = { editable = "." }
 dependencies = [
     { name = "aiosqlite" },
@@ -402,7 +402,7 @@ requires-dist = [
     { name = "json-repair", specifier = ">=0.55.0" },
     { name = "llama-index", specifier = ">=0.14.22" },
     { name = "loguru", specifier = ">=0.7.0,<0.8" },
-    { name = "markitdown", extras = ["pdf"], specifier = ">=0.1.5,<0.2" },
+    { name = "markitdown", extras = ["pdf"], specifier = ">=0.1.6,<0.2" },
     { name = "minio", specifier = ">=7.2.0,<8" },
     { name = "openpyxl", specifier = ">=3.1.5,<4" },
     { name = "passlib", specifier = ">=1.7.4,<2" },
@@ -1858,7 +1858,7 @@ wheels = [
 
 [[package]]
 name = "markitdown"
-version = "0.1.5"
+version = "0.1.6"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -1868,9 +1868,9 @@ dependencies = [
     { name = "markdownify" },
     { name = "requests" },
 ]
-sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/83/93/3b93c291c99d09f64f7535ba74c1c6a3507cf49cffd38983a55de6f834b6/markitdown-0.1.5.tar.gz", hash = "sha256:4c956ff1528bf15e1814542035ec96e989206d19d311bb799f4df973ecafc31a", size = 45099, upload-time = "2026-02-20T19:45:23.886Z" }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/18/b7/91fe0e2df07107ab701a15c8ad3213135707e4d6206ae9bd8f457a7ad86a/markitdown-0.1.6.tar.gz", hash = "sha256:e5bdbaffd971b29598c7c39ef0e9afce2f08c0751fbfa4e4257678ebaf8cfc7e", size = 50795, upload-time = "2026-05-26T22:43:59.318Z" }
 wheels = [
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/b1/8b/fd7e042455a829a1ede0bc8e9e3061aa6c7c4cf745385526ef62ff1b5a5b/markitdown-0.1.5-py3-none-any.whl", hash = "sha256:5180a9a841e20fc01c2c09dbc5d039638429bbebcdc2af1b2615c3c427840434", size = 63402, upload-time = "2026-02-20T19:45:27.195Z" },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/9e/30/8031f183ee86ea8ac4e7ea1296bab4cca1bee2fd036a26df69764eb7ca74/markitdown-0.1.6-py3-none-any.whl", hash = "sha256:07b2d5bf87b5c53e13a9f2fdc440df8ccc85e26f40c1e557781727b700049775", size = 70032, upload-time = "2026-05-26T22:44:03.209Z" },
 ]
 
 [package.optional-dependencies]
