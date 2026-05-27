@@ -30,7 +30,12 @@ router = APIRouter()
 @router.get("/datasets", response_model=list[MyDatasetRead])
 async def my_datasets(
     current_user: UserAccount = Security(
-        get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
+        get_current_user,
+        scopes=[
+            ScopeType.CONSUMER.value,
+            ScopeType.PROVIDER.value,
+            ScopeType.ADMIN.value,
+        ],
     ),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -51,7 +56,12 @@ async def ask_my_dataset_content(
     dataset_id: str,
     request: ContentRagRequest,
     current_user: UserAccount = Security(
-        get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
+        get_current_user,
+        scopes=[
+            ScopeType.CONSUMER.value,
+            ScopeType.PROVIDER.value,
+            ScopeType.ADMIN.value,
+        ],
     ),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -70,7 +80,12 @@ async def request_dataset_export(
     request: ExportRequest,
     background_tasks: BackgroundTasks,
     current_user: UserAccount = Security(
-        get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
+        get_current_user,
+        scopes=[
+            ScopeType.CONSUMER.value,
+            ScopeType.PROVIDER.value,
+            ScopeType.ADMIN.value,
+        ],
     ),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -88,7 +103,12 @@ async def request_dataset_export(
 async def my_export_jobs(
     dataset_id: str | None = None,
     current_user: UserAccount = Security(
-        get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
+        get_current_user,
+        scopes=[
+            ScopeType.CONSUMER.value,
+            ScopeType.PROVIDER.value,
+            ScopeType.ADMIN.value,
+        ],
     ),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -101,7 +121,12 @@ async def my_export_jobs(
 async def my_export_job_detail(
     job_id: str,
     current_user: UserAccount = Security(
-        get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
+        get_current_user,
+        scopes=[
+            ScopeType.CONSUMER.value,
+            ScopeType.PROVIDER.value,
+            ScopeType.ADMIN.value,
+        ],
     ),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -115,7 +140,12 @@ async def retry_my_export(
     job_id: str,
     background_tasks: BackgroundTasks,
     current_user: UserAccount = Security(
-        get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
+        get_current_user,
+        scopes=[
+            ScopeType.CONSUMER.value,
+            ScopeType.PROVIDER.value,
+            ScopeType.ADMIN.value,
+        ],
     ),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -128,7 +158,12 @@ async def retry_my_export(
 async def download_my_export(
     job_id: str,
     current_user: UserAccount = Security(
-        get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
+        get_current_user,
+        scopes=[
+            ScopeType.CONSUMER.value,
+            ScopeType.PROVIDER.value,
+            ScopeType.ADMIN.value,
+        ],
     ),
     db: AsyncSession = Depends(get_db),
 ) -> Response:

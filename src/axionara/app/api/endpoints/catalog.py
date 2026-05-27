@@ -100,7 +100,12 @@ async def ask_catalog_dataset_profile(
 async def acquire_catalog_dataset(
     dataset_id: str,
     current_user: UserAccount = Security(
-        get_current_user, scopes=[ScopeType.CONSUMER.value, ScopeType.ADMIN.value]
+        get_current_user,
+        scopes=[
+            ScopeType.CONSUMER.value,
+            ScopeType.PROVIDER.value,
+            ScopeType.ADMIN.value,
+        ],
     ),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
