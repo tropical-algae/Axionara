@@ -42,6 +42,7 @@ from axionara.app.api.endpoints.provider_dataset import (
     upload_dataset,
     uploaded_dataset_detail,
 )
+from axionara.app.services.analysis_service import AnalysisOrchestrator
 from axionara.app.services.export_service import ExportService
 from axionara.common.config import settings
 from axionara.core.db.crud import (
@@ -97,6 +98,36 @@ def patch_dataset_qa_agent(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "axionara.app.services.inference_service.agent_factory.get_agent",
         fake_get_agent,
+    )
+
+
+def run_analysis_endpoint(dataset_id: str, admin: object, db_session: AsyncSession):
+    job = asyncio.run(
+        analyze_dataset(
+            dataset_id=dataset_id,
+            background_tasks=BackgroundTasks(),
+            current_user=admin,
+            db=db_session,
+        )
+    )
+    assert job.job_status == "pending"
+    return asyncio.run(
+        AnalysisOrchestrator().process_analysis_job(db=db_session, job_id=job.id)
+    )
+
+
+def run_retry_analysis_endpoint(job_id: str, admin: object, db_session: AsyncSession):
+    job = asyncio.run(
+        retry_analysis_job(
+            job_id=job_id,
+            background_tasks=BackgroundTasks(),
+            current_user=admin,
+            db=db_session,
+        )
+    )
+    assert job.job_status == "pending"
+    return asyncio.run(
+        AnalysisOrchestrator().process_analysis_job(db=db_session, job_id=job.id)
     )
 
 
@@ -193,12 +224,8 @@ def test_admin_analyze_csv_dataset(db_session: AsyncSession, data_store: DataSto
     )
     assert admin is not None
 
-    job = asyncio.run(
-        analyze_dataset(
-            dataset_id=data_store.uploaded_dataset_id,
-            current_user=admin,
-            db=db_session,
-        )
+    job = run_analysis_endpoint(
+        dataset_id=data_store.uploaded_dataset_id, admin=admin, db_session=db_session
     )
     analysis = asyncio.run(
         latest_dataset_analysis(
@@ -261,8 +288,8 @@ def test_admin_retries_failed_analysis_job(
     failed_job.job_status = "failed"
     asyncio.run(update_analysis_job(db=db_session, job=failed_job))
 
-    retry_job = asyncio.run(
-        retry_analysis_job(job_id=failed_job.id, current_user=admin, db=db_session)
+    retry_job = run_retry_analysis_endpoint(
+        job_id=failed_job.id, admin=admin, db_session=db_session
     )
 
     assert retry_job.id != failed_job.id
@@ -570,8 +597,8 @@ def test_pdf_analysis_skips_cleaning(
     )
     data_store.uploaded_pdf_dataset_id = uploaded.id
 
-    job = asyncio.run(
-        analyze_dataset(dataset_id=uploaded.id, current_user=admin, db=db_session)
+    job = run_analysis_endpoint(
+        dataset_id=uploaded.id, admin=admin, db_session=db_session
     )
     analysis = asyncio.run(
         latest_dataset_analysis(dataset_id=uploaded.id, current_user=admin, db=db_session)
@@ -614,8 +641,8 @@ def test_xlsx_analysis_and_export(
         )
     )
     data_store.uploaded_xlsx_dataset_id = uploaded.id
-    job = asyncio.run(
-        analyze_dataset(dataset_id=uploaded.id, current_user=admin, db=db_session)
+    job = run_analysis_endpoint(
+        dataset_id=uploaded.id, admin=admin, db_session=db_session
     )
     analysis = asyncio.run(
         latest_dataset_analysis(dataset_id=uploaded.id, current_user=admin, db=db_session)
@@ -691,8 +718,8 @@ def test_sql_upload_analysis_keeps_raw_only(
         )
     )
     data_store.uploaded_sql_dataset_id = uploaded.id
-    job = asyncio.run(
-        analyze_dataset(dataset_id=uploaded.id, current_user=admin, db=db_session)
+    job = run_analysis_endpoint(
+        dataset_id=uploaded.id, admin=admin, db_session=db_session
     )
     analysis = asyncio.run(
         latest_dataset_analysis(dataset_id=uploaded.id, current_user=admin, db=db_session)
