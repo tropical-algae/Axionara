@@ -1,10 +1,13 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends, Security
+from fastapi import APIRouter, BackgroundTasks, Depends, Security
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.api.deps import get_current_user, get_db
-from axionara.app.services.analysis_service import AnalysisOrchestrator
+from axionara.app.services.analysis_service import (
+    AnalysisOrchestrator,
+    process_analysis_job_background,
+)
 from axionara.app.services.review_service import ReviewService
 from axionara.core.db.crud import select_all_datasets, select_datasets_by_status
 from axionara.core.db.models import UserAccount
@@ -37,15 +40,18 @@ async def admin_datasets(
 @router.post("/datasets/{dataset_id}/analyze", response_model=AnalysisJobRead)
 async def analyze_dataset(
     dataset_id: str,
+    background_tasks: BackgroundTasks,
     use_llm: bool = False,
     current_user: UserAccount = Security(
         get_current_user, scopes=[ScopeType.ADMIN.value]
     ),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    return await AnalysisOrchestrator().run_dataset_analysis(
-        db=db, dataset_id=dataset_id, triggered_by=current_user, use_llm=use_llm
+    job = await AnalysisOrchestrator().create_analysis_job(
+        db=db, dataset_id=dataset_id, triggered_by=current_user
     )
+    background_tasks.add_task(process_analysis_job_background, job.id, use_llm)
+    return job
 
 
 @router.get("/datasets/{dataset_id}/analysis/latest", response_model=DatasetAnalysisRead)
@@ -109,18 +115,20 @@ async def dataset_reviews(
 @router.post("/analysis-jobs/{job_id}/retry", response_model=AnalysisJobRead)
 async def retry_analysis_job(
     job_id: str,
+    background_tasks: BackgroundTasks,
     use_llm: bool = False,
     current_user: UserAccount = Security(
         get_current_user, scopes=[ScopeType.ADMIN.value]
     ),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    return await AnalysisOrchestrator().retry_analysis_job(
+    job = await AnalysisOrchestrator().create_retry_analysis_job(
         db=db,
         job_id=job_id,
         triggered_by=current_user,
-        use_llm=use_llm,
     )
+    background_tasks.add_task(process_analysis_job_background, job.id, use_llm)
+    return job
 
 
 @router.get("/datasets/pending", response_model=list[DatasetAssetRead])

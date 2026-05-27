@@ -5,6 +5,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.services.storage_service import get_storage_service
 from axionara.app.utils.constant import CONSTANT
+from axionara.common.logging import logger
 from axionara.common.util import generate_random_token
 from axionara.core.db.crud import (
     insert_analysis_job,
@@ -29,6 +30,7 @@ from axionara.core.db.models import (
     Tag,
     UserAccount,
 )
+from axionara.core.db.session import local_session
 from axionara.core.model.dataset import DatasetAssetStatus
 from axionara.core.processing.analyzers.simple import (
     ExportCapabilityEvaluator,
@@ -56,6 +58,23 @@ class AnalysisOrchestrator:
         triggered_by: UserAccount,
         use_llm: bool = False,
     ) -> AnalysisJob:
+        job = await self.create_analysis_job(
+            db=db,
+            dataset_id=dataset_id,
+            triggered_by=triggered_by,
+        )
+        return await self.process_analysis_job(
+            db=db,
+            job_id=job.id,
+            use_llm=use_llm,
+        )
+
+    async def create_analysis_job(
+        self,
+        db: AsyncSession,
+        dataset_id: str,
+        triggered_by: UserAccount,
+    ) -> AnalysisJob:
         dataset = await self._get_dataset(db=db, dataset_id=dataset_id)
         job = await insert_analysis_job(
             db=db,
@@ -63,11 +82,33 @@ class AnalysisOrchestrator:
                 id=generate_random_token(prefix="JOB", length=24),
                 dataset_id=dataset_id,
                 triggered_by=triggered_by.id,
-                job_status="running",
-                current_stage="parse",
-                started_at=datetime.now(),
+                job_status="pending",
+                current_stage="queued",
             ),
         )
+        dataset.status = DatasetAssetStatus.PROCESSING_REVIEW.value
+        await update_dataset_asset(db=db, dataset=dataset)
+        return job
+
+    async def process_analysis_job(
+        self,
+        db: AsyncSession,
+        job_id: str,
+        use_llm: bool = False,
+    ) -> AnalysisJob:
+        job = await self.get_analysis_job(db=db, job_id=job_id)
+        if job.job_status == "succeeded":
+            return job
+        if job.job_status not in {"pending", "failed"}:
+            raise HTTPException(**CONSTANT.RESP_ANALYSIS_JOB_NOT_RETRYABLE)
+
+        dataset = await self._get_dataset(db=db, dataset_id=job.dataset_id)
+        job.job_status = "running"
+        job.current_stage = "parse"
+        job.error_message = None
+        job.started_at = datetime.now()
+        job.finished_at = None
+        await update_analysis_job(db=db, job=job)
 
         try:
             dataset.status = DatasetAssetStatus.PROCESSING_REVIEW.value
@@ -212,14 +253,30 @@ class AnalysisOrchestrator:
         triggered_by: UserAccount,
         use_llm: bool = False,
     ) -> AnalysisJob:
+        retry_job = await self.create_retry_analysis_job(
+            db=db,
+            job_id=job_id,
+            triggered_by=triggered_by,
+        )
+        return await self.process_analysis_job(
+            db=db,
+            job_id=retry_job.id,
+            use_llm=use_llm,
+        )
+
+    async def create_retry_analysis_job(
+        self,
+        db: AsyncSession,
+        job_id: str,
+        triggered_by: UserAccount,
+    ) -> AnalysisJob:
         job = await self.get_analysis_job(db=db, job_id=job_id)
         if job.job_status != "failed":
             raise HTTPException(**CONSTANT.RESP_ANALYSIS_JOB_NOT_RETRYABLE)
-        return await self.run_dataset_analysis(
+        return await self.create_analysis_job(
             db=db,
             dataset_id=job.dataset_id,
             triggered_by=triggered_by,
-            use_llm=use_llm,
         )
 
     async def _get_dataset(self, db: AsyncSession, dataset_id: str) -> DatasetAsset:
@@ -262,3 +319,15 @@ class AnalysisOrchestrator:
                     is_primary=item.get("category") == "data_type",
                 ),
             )
+
+
+async def process_analysis_job_background(job_id: str, use_llm: bool = False) -> None:
+    try:
+        async with local_session() as db:
+            await AnalysisOrchestrator().process_analysis_job(
+                db=db,
+                job_id=job_id,
+                use_llm=use_llm,
+            )
+    except Exception as err:
+        logger.error(f"Background analysis job {job_id} failed: {err}")
