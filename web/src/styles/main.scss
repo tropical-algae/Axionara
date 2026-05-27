@@ -160,6 +160,11 @@ button:disabled {
   align-items: center;
 }
 
+.chip-row {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .brand {
   gap: 12px;
   min-width: 0;
@@ -765,13 +770,16 @@ label textarea:focus,
 
 .status-badge[data-status*="upload"],
 .status-badge[data-status*="analyz"],
-.status-badge[data-status*="review"] {
+.status-badge[data-status*="review"],
+.status-badge[data-status*="pending"],
+.status-badge[data-status*="running"] {
   color: var(--accent-strong);
   background: #f0f7fa;
 }
 
 .status-badge[data-status*="publish"],
 .status-badge[data-status*="complete"],
+.status-badge[data-status*="succeed"],
 .status-badge[data-status*="approved"] {
   color: var(--accent-strong);
   background: rgba(22, 122, 154, 0.1);
@@ -1041,6 +1049,460 @@ pre {
   font-style: normal;
   font-weight: 850;
 }
+
+
+.review-workbench {
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.review-queue {
+  grid-column: 1;
+  display: grid;
+  gap: 12px;
+  align-self: start;
+}
+
+.queue-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.queue-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.queue-toolbar label:focus-within {
+  border-color: rgba(22, 122, 154, 0.55);
+  box-shadow: 0 0 0 4px rgba(22, 122, 154, 0.1);
+}
+
+.queue-toolbar input {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.queue-toolbar input:focus {
+  box-shadow: none;
+}
+
+.queue-toolbar button,
+.review-actions button,
+.analysis-progress-panel button,
+.review-analysis header button,
+.job-card button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.2;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.queue-toolbar button:hover,
+.review-actions button:hover,
+.analysis-progress-panel button:hover,
+.review-analysis header button:hover,
+.job-card button:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-tint);
+  box-shadow: var(--shadow-sm);
+}
+
+.review-list {
+  display: grid;
+  gap: 10px;
+}
+
+.review-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  width: 100%;
+  min-height: 116px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  box-shadow: var(--shadow-sm);
+}
+
+.review-item .status-badge {
+  grid-column: 1 / -1;
+}
+
+.review-item strong,
+.review-item span,
+.review-item em {
+  min-width: 0;
+}
+
+.review-item strong {
+  overflow: hidden;
+  font-size: 1rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-item span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-item em {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 850;
+  text-align: right;
+}
+
+.review-item.active,
+.review-item:hover {
+  border-color: rgba(22, 122, 154, 0.32);
+  background: var(--surface-tint);
+}
+
+.review-detail {
+  grid-column: 2;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.review-hero-panel,
+.workflow-panel,
+.analysis-progress-panel,
+.detail-card,
+.review-section-split article {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.review-hero-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  padding: 20px;
+}
+
+.review-hero-panel h2 {
+  margin: 12px 0 7px;
+  font-size: 1.65rem;
+}
+
+.review-hero-panel p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 420px;
+}
+
+.modal-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+}
+
+.workflow-panel {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  overflow: hidden;
+}
+
+.workflow-panel article {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 15px;
+  border-right: 1px solid var(--line);
+}
+
+.workflow-panel article:last-child {
+  border-right: 0;
+}
+
+.workflow-panel span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.workflow-panel strong {
+  font-size: 0.95rem;
+}
+
+.workflow-panel em {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-style: normal;
+  line-height: 1.35;
+}
+
+.workflow-panel .done {
+  background: rgba(22, 122, 154, 0.08);
+}
+
+.workflow-panel .active {
+  background: #f0f7fa;
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+.workflow-panel .failed {
+  background: rgba(199, 72, 85, 0.09);
+  box-shadow: inset 0 -3px 0 var(--rose);
+}
+
+.inline-notice,
+.inline-error {
+  margin: 0;
+  padding: 11px 13px;
+  border-radius: var(--radius);
+  font-weight: 800;
+}
+
+.inline-notice {
+  color: var(--accent-strong);
+  background: rgba(22, 122, 154, 0.1);
+}
+
+.inline-error {
+  color: var(--rose);
+  background: rgba(199, 72, 85, 0.1);
+}
+
+.analysis-progress-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+}
+
+.analysis-progress-panel > div {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.analysis-progress-panel span:not(.status-badge) {
+  color: var(--muted);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.detail-card {
+  padding: 16px;
+}
+
+.detail-card h3,
+.review-section-split h3 {
+  margin: 0 0 12px;
+}
+
+.metadata-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.metadata-list div {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.metadata-list dt {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.metadata-list dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-weight: 750;
+}
+
+.review-analysis header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.review-analysis header h2,
+.review-analysis header p {
+  margin: 0;
+}
+
+.review-analysis header p {
+  margin-top: 5px;
+  color: var(--muted);
+}
+
+.review-analysis .dossier-band + .narrative-grid {
+  margin-top: 14px;
+}
+
+.review-section-split {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.review-section-split article {
+  padding: 14px;
+}
+
+.review-section-split ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.review-section-split li strong {
+  margin-right: 8px;
+  color: var(--muted);
+}
+
+.compact-fields {
+  margin-top: 14px;
+}
+
+.review-ledger-panel .empty-state,
+.review-analysis .empty-state {
+  min-height: 180px;
+}
+
+.review-timeline {
+  display: grid;
+  gap: 10px;
+}
+
+.review-timeline article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.review-timeline .status-badge {
+  align-self: center;
+}
+
+.review-timeline strong,
+.review-timeline span {
+  display: block;
+}
+
+.review-timeline span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.review-modal-form {
+  display: grid;
+  gap: 14px;
+}
+
+.review-modal-form p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.review-modal-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.review-modal-form textarea {
+  resize: vertical;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.job-card,
+.ledger-card {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.job-card button:disabled,
+.review-actions button:disabled,
+.analysis-progress-panel button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
 
 .auth-page {
   display: grid;
@@ -1613,7 +2075,10 @@ label select {
 }
 
 .chat-compose button {
+  align-self: stretch;
   gap: 8px;
+  height: auto;
+  min-height: 0;
   padding: 0 16px;
 }
 
@@ -1710,6 +2175,35 @@ label select {
 
   .command-radar {
     min-height: 360px;
+  }
+
+  .review-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .review-queue,
+  .review-detail {
+    grid-column: 1;
+  }
+
+  .review-hero-panel,
+  .detail-grid,
+  .review-section-split {
+    grid-template-columns: 1fr;
+  }
+
+  .review-actions {
+    justify-content: flex-start;
+    max-width: none;
+  }
+
+  .workflow-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .workflow-panel article {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
   }
 }
 
