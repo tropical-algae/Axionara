@@ -54,7 +54,7 @@ dev = [
   "poethepoet>=0.37.0",
 ]
 release = ["python-semantic-release>=10.5.3,<11"]
-aws = ["mangum>=0.17.0,<0.18"]
+aws = ["mangum>=0.21.0,<0.22"]
 
 [tool.uv]
 default-groups = ["dev", "release", "aws"]
