@@ -1,7 +1,11 @@
 <template>
   <section class="ops-layout page-grid">
     <header class="section-header span-all">
-      <div><span class="eyebrow">REVIEW LEDGER</span><h1>审核记录</h1></div>
+      <div>
+        <RouterLink class="back-link" to="/admin"><ArrowLeft :size="16" />返回管理后台</RouterLink>
+        <span class="eyebrow">REVIEW LEDGER</span>
+        <h1>审核记录</h1>
+      </div>
       <div class="chip-row">
         <button v-for="status in filters" :key="status.value || 'all'" :class="{ active: activeStatus === status.value }" @click="setStatus(status.value)">
           {{ status.label }}
@@ -32,6 +36,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import { ArrowLeft } from "lucide-vue-next";
 
 import EmptyState from "@/components/EmptyState.vue";
 import LoadingState from "@/components/LoadingState.vue";

@@ -2,6 +2,7 @@
   <section class="ops-layout review-workbench page-grid">
     <header class="section-header span-all">
       <div>
+        <RouterLink class="back-link" to="/admin"><ArrowLeft :size="16" />返回管理后台</RouterLink>
         <span class="eyebrow">REVIEW QUEUE</span>
         <h1>数据审核</h1>
       </div>
@@ -53,7 +54,7 @@
             <button v-if="canAnalyze" type="button" :disabled="isBusy('analyze')" @click="runAnalyze">
               <Play :size="16" />{{ isBusy('analyze') ? '排队中...' : '分析' }}
             </button>
-            <button v-if="canApprove" type="button" :disabled="isBusy('approve')" @click="approveNow">
+            <button v-if="canApprove" type="button" :disabled="isBusy('approve')" @click="approveConfirmOpen = true">
               <CheckCircle2 :size="16" />{{ isBusy('approve') ? '处理中...' : '通过' }}
             </button>
             <button v-if="canPublish" type="button" :disabled="isBusy('publish')" @click="openAction('publish')">
@@ -181,6 +182,16 @@
       </template>
     </main>
 
+    <ConfirmDialog
+      :open="approveConfirmOpen"
+      title="通过数据审核"
+      description="确认后该数据会进入待发布状态，发布前仍不会展示在数据市场中。"
+      confirm-label="确认通过"
+      :busy="isBusy('approve')"
+      @close="approveConfirmOpen = false"
+      @confirm="approveNow"
+    />
+
     <Modal :open="Boolean(pendingAction)" :title="actionConfig?.title || '确认操作'" @close="closeAction">
       <form class="review-modal-form" @submit.prevent="submitAction">
         <p>{{ actionConfig?.description }}</p>
@@ -201,9 +212,10 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { Archive, CheckCircle2, Play, RefreshCw, Search, Send, XCircle } from "lucide-vue-next";
+import { Archive, ArrowLeft, CheckCircle2, Play, RefreshCw, Search, Send, XCircle } from "lucide-vue-next";
 
 import type { AnalysisJob, DatasetReview } from "@/api/types";
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import LoadingState from "@/components/LoadingState.vue";
 import MetricTile from "@/components/MetricTile.vue";
@@ -224,6 +236,7 @@ const busy = ref("");
 const notice = ref("");
 const error = ref("");
 const pendingAction = ref<"reject" | "publish" | "archive" | null>(null);
+const approveConfirmOpen = ref(false);
 const actionComment = ref("");
 let pollTimer: number | undefined;
 let contextRequestId = 0;
@@ -413,6 +426,7 @@ async function approveNow() {
   error.value = "";
   try {
     await admin.action(selectedDataset.value.id, "approve");
+    approveConfirmOpen.value = false;
     notice.value = "审核已通过，下一步可以发布到数据市场。";
     await refreshAll();
   } catch (err) {
