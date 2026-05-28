@@ -1,15 +1,12 @@
 <template>
   <section class="upload-layout page-grid">
-    <form class="upload-console asset-upload" @submit.prevent="submit">
+    <form class="upload-console asset-upload" @submit.prevent="requestSubmit">
       <header class="upload-hero">
         <div>
           <span class="eyebrow">ASSET INTAKE</span>
           <h1>登记并上传数据资产</h1>
           <p>提交文件前补齐来源、覆盖范围、敏感性和授权意图，审核人员可以直接判断资产是否适合进入市场。</p>
         </div>
-        <button class="primary-action" type="submit" :disabled="!canSubmit || loading">
-          {{ loading ? "提交中..." : "提交到分析管线" }}
-        </button>
       </header>
 
       <section class="upload-section">
@@ -103,9 +100,20 @@
           <label>使用限制<textarea v-model="form.usage_restrictions" rows="4" placeholder="例如：仅用于研究分析，不得转售；需脱敏后公开展示" /></label>
         </div>
       </section>
+
+      <footer class="upload-submit-bar">
+        <div>
+          <strong>{{ canSubmit ? "材料已完整" : "仍有必填项未完成" }}</strong>
+          <span>提交后资产进入管理员审核队列，审核通过后才会进入数据市场。</span>
+        </div>
+        <button class="primary-action" type="submit" :disabled="!canSubmit || loading">
+          {{ loading ? "提交中..." : "提交并等待审核" }}
+        </button>
+      </footer>
     </form>
 
-    <aside class="upload-steps upload-review">
+    <aside class="upload-steps">
+      <div class="upload-review">
       <div class="upload-review-card">
         <span class="eyebrow">SUBMISSION CHECK</span>
         <h2>提交检查</h2>
@@ -134,7 +142,18 @@
         <strong>后续流程</strong>
         <p>提交后资产会进入文件存储、结构解析、质量统计、敏感性扫描和管理员审核。审核通过后才会出现在数据市场。</p>
       </div>
+      </div>
     </aside>
+
+    <ConfirmDialog
+      :open="confirmOpen"
+      title="提交数据资产"
+      description="提交后数据会进入管理员审核和管线分析流程，审核完成前仍可在上传记录中查看进度。"
+      confirm-label="提交并等待审核"
+      :busy="loading"
+      @close="confirmOpen = false"
+      @confirm="submit"
+    />
   </section>
 </template>
 
@@ -143,6 +162,7 @@ import { computed, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { CheckCircle2, CircleAlert } from "lucide-vue-next";
 
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import FileIngestor from "@/components/FileIngestor.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useProviderStore } from "@/stores/provider";
@@ -151,6 +171,7 @@ const provider = useProviderStore();
 const auth = useAuthStore();
 const router = useRouter();
 const loading = ref(false);
+const confirmOpen = ref(false);
 
 const categories = ["交通出行", "人口统计", "公共安全", "生态环境", "经济运行", "医疗健康", "教育科研", "企业经营", "其他"];
 const updateFrequencies = [
@@ -224,10 +245,16 @@ function textOrUndefined(value: string) {
   return value.trim() || undefined;
 }
 
+function requestSubmit() {
+  if (!canSubmit.value || loading.value) return;
+  confirmOpen.value = true;
+}
+
 async function submit() {
   if (!form.file || !canSubmit.value) return;
   loading.value = true;
   try {
+    confirmOpen.value = false;
     await provider.upload({
       title: form.title.trim(),
       description: textOrUndefined(form.description),
