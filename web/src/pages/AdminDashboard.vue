@@ -22,7 +22,7 @@
     <main class="ops-board span-all">
       <div class="status-river">
         <article v-for="item in distribution" :key="item.status">
-          <span :style="{ width: `${Math.max(item.count * 16, 18)}%` }" />
+          <span class="status-river-mark" aria-hidden="true" />
           <strong>{{ item.status }}</strong>
           <em>{{ item.count }}</em>
         </article>

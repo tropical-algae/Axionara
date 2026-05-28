@@ -3,8 +3,8 @@
     <div class="confirm-dialog" :class="`tone-${tone}`">
       <p v-if="description">{{ description }}</p>
       <slot />
-      <div class="confirm-actions">
-        <button type="button" :disabled="busy" @click="handleClose">{{ cancelLabel }}</button>
+      <div class="modal-actions confirm-actions">
+        <button class="secondary-action" type="button" :disabled="busy" @click="handleClose">{{ cancelLabel }}</button>
         <button class="primary-action" type="button" :disabled="busy" @click="$emit('confirm')">
           {{ busy ? busyLabel : confirmLabel }}
         </button>

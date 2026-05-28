@@ -113,8 +113,7 @@
     </form>
 
     <aside class="upload-steps">
-      <div class="upload-review">
-      <div class="upload-review-card">
+      <div class="upload-step-card">
         <span class="eyebrow">SUBMISSION CHECK</span>
         <h2>提交检查</h2>
         <div class="check-list">
@@ -126,7 +125,7 @@
         </div>
       </div>
 
-      <div class="upload-review-card">
+      <div class="upload-step-card">
         <span class="eyebrow">ASSET SNAPSHOT</span>
         <h2>{{ form.title || "未命名资产" }}</h2>
         <dl>
@@ -138,10 +137,9 @@
         </dl>
       </div>
 
-      <div class="upload-review-card">
+      <div class="upload-step-card">
         <strong>后续流程</strong>
         <p>提交后资产会进入文件存储、结构解析、质量统计、敏感性扫描和管理员审核。审核通过后才会出现在数据市场。</p>
-      </div>
       </div>
     </aside>
 

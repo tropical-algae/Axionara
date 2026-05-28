@@ -1200,7 +1200,7 @@ pre {
 
 .status-river article {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
@@ -1210,10 +1210,10 @@ pre {
   box-shadow: var(--shadow-sm);
 }
 
-.status-river article span {
+.status-river-mark {
   display: block;
-  max-width: 100%;
-  height: 14px;
+  inline-size: 0.72rem;
+  aspect-ratio: 1;
   border-radius: 999px;
   background: var(--accent);
 }
@@ -2080,19 +2080,9 @@ label select {
 
 .upload-steps {
   grid-column: 2;
-  min-height: calc(100vh - 124px);
 }
 
-.upload-review {
-  position: fixed;
-  top: 104px;
-  right: max(var(--page-gutter), calc((100vw - var(--page-max)) / 2));
-  width: 360px;
-  max-height: calc(100vh - 124px);
-  overflow: auto;
-}
-
-.upload-review-card {
+.upload-step-card {
   padding: 18px;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -2100,35 +2090,35 @@ label select {
   box-shadow: var(--shadow-sm);
 }
 
-.upload-review-card h2 {
+.upload-step-card h2 {
   margin: 8px 0 14px;
 }
 
-.upload-review-card:first-child {
+.upload-step-card:first-child {
   border-color: rgba(12, 98, 120, 0.46);
   background: #172033;
   color: #fff;
 }
 
-.upload-review-card:first-child .eyebrow,
-.upload-review-card:first-child h2,
-.upload-review-card:first-child .check-list article {
+.upload-step-card:first-child .eyebrow,
+.upload-step-card:first-child h2,
+.upload-step-card:first-child .check-list article {
   color: #fff;
 }
 
-.upload-review-card:first-child .check-list article:not(.done) {
+.upload-step-card:first-child .check-list article:not(.done) {
   color: rgba(255, 255, 255, 0.72);
 }
 
-.upload-review-card:first-child .check-list article svg {
+.upload-step-card:first-child .check-list article svg {
   color: rgba(255, 255, 255, 0.62);
 }
 
-.upload-review-card:first-child .check-list article.done svg {
+.upload-step-card:first-child .check-list article.done svg {
   color: #87e6d5;
 }
 
-.upload-review-card p {
+.upload-step-card p {
   margin-bottom: 0;
 }
 
@@ -2158,25 +2148,25 @@ label select {
   color: var(--accent);
 }
 
-.upload-review-card dl {
+.upload-step-card dl {
   display: grid;
   gap: 12px;
   margin: 0;
 }
 
-.upload-review-card dl div {
+.upload-step-card dl div {
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr);
   gap: 12px;
   line-height: 1.45;
 }
 
-.upload-review-card dt {
+.upload-step-card dt {
   color: var(--faint);
   font-weight: 800;
 }
 
-.upload-review-card dd {
+.upload-step-card dd {
   margin: 0;
   color: var(--text);
   font-weight: 800;
@@ -2542,19 +2532,12 @@ label select {
   .market-filters,
   .market-intel,
   .ops-rail,
-  .detail-side,
-  .upload-review {
+  .detail-side {
     position: static;
   }
 
   .upload-steps {
     min-height: 0;
-  }
-
-  .upload-review {
-    width: auto;
-    max-height: none;
-    overflow: visible;
   }
 
   .command-radar {
@@ -2686,14 +2669,6 @@ label select {
   .record-actions button,
   .confirm-actions button {
     width: 100%;
-  }
-
-  .status-river article {
-    grid-template-columns: 1fr auto;
-  }
-
-  .status-river article span {
-    grid-column: 1 / -1;
   }
 
   .copilot-button {

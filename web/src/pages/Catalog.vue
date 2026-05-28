@@ -62,7 +62,7 @@
 
 <script setup lang="ts">
 import { Bot } from "lucide-vue-next";
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 
 import DataCard from "@/components/DataCard.vue";
 import EmptyState from "@/components/EmptyState.vue";
@@ -77,6 +77,7 @@ const ui = useUiStore();
 const query = reactive<CatalogQuery>({});
 const keyword = ref("");
 const formats = computed(() => catalog.formats.length ? catalog.formats : ["csv", "json", "pdf", "xlsx"]);
+let searchTimer: number | undefined;
 
 function apply() {
   query.keyword = keyword.value || undefined;
@@ -94,7 +95,11 @@ onMounted(async () => {
 });
 
 watch(keyword, () => {
-  window.clearTimeout((apply as unknown as { timer?: number }).timer);
-  (apply as unknown as { timer?: number }).timer = window.setTimeout(apply, 260);
+  window.clearTimeout(searchTimer);
+  searchTimer = window.setTimeout(apply, 260);
+});
+
+onBeforeUnmount(() => {
+  window.clearTimeout(searchTimer);
 });
 </script>
