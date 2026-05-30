@@ -27,6 +27,8 @@ from axionara.app.api.endpoints.catalog import (
     catalog_dataset_detail,
     list_catalog_datasets,
     list_catalog_tags,
+    stream_catalog_dataset_profile,
+    stream_catalog_dataset_profiles,
 )
 from axionara.app.api.endpoints.me import (
     ask_my_dataset_content,
@@ -36,6 +38,7 @@ from axionara.app.api.endpoints.me import (
     my_export_jobs,
     request_dataset_export,
     retry_my_export,
+    stream_my_dataset_content,
 )
 from axionara.app.api.endpoints.provider_dataset import (
     my_uploaded_datasets,
@@ -89,6 +92,23 @@ class FakeDatasetQaAgent:
             return SimpleNamespace(content="没有找到匹配的数据。")
         answer = "\n".join(match["material"] for match in matches)
         return SimpleNamespace(content=answer)
+
+    async def run_stream(self, message, tools, memory=None, **kwargs):
+        response = await self.run(message, tools, memory=memory, **kwargs)
+        text = response.content
+        for start in range(0, len(text), 8):
+            chunk = text[start : start + 8]
+            yield SimpleNamespace(
+                delta=chunk, response=text[: start + len(chunk)], tools=[]
+            )
+
+
+async def collect_streaming_response(response) -> str:
+    chunks = [
+        chunk.decode() if isinstance(chunk, bytes) else chunk
+        async for chunk in response.body_iterator
+    ]
+    return "".join(chunks)
 
 
 def patch_dataset_qa_agent(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -404,6 +424,38 @@ def test_catalog_public_profile_rag_answer(
     assert "公开统计" in scoped.answer
 
 
+@pytest.mark.run(order=17)
+def test_catalog_public_profile_rag_stream(
+    db_session: AsyncSession, data_store: DataStore, monkeypatch: pytest.MonkeyPatch
+):
+    patch_dataset_qa_agent(monkeypatch)
+
+    response = asyncio.run(
+        stream_catalog_dataset_profiles(
+            request=CatalogRagRequest(question="这个人口数据支持什么导出格式？"),
+            db=db_session,
+        )
+    )
+    scoped = asyncio.run(
+        stream_catalog_dataset_profile(
+            dataset_id=data_store.uploaded_dataset_id,
+            request=CatalogRagRequest(question="这个数据有哪些统计信息？"),
+            db=db_session,
+        )
+    )
+
+    body = asyncio.run(collect_streaming_response(response))
+    scoped_body = asyncio.run(collect_streaming_response(scoped))
+
+    assert response.media_type == "text/event-stream"
+    assert "event: delta" in body
+    assert "event: done" in body
+    assert "sql" in body
+    assert data_store.uploaded_dataset_id in scoped_body
+    assert "event: delta" in scoped_body
+    assert "event: done" in scoped_body
+
+
 @pytest.mark.run(order=18)
 def test_consumer_acquires_dataset(db_session: AsyncSession, data_store: DataStore):
     consumer = asyncio.run(
@@ -475,6 +527,35 @@ def test_consumer_asks_acquired_dataset_content(
     assert response.matches
     assert "A" in response.answer
     assert "10" in response.answer
+
+
+@pytest.mark.run(order=20)
+def test_consumer_asks_acquired_dataset_content_stream(
+    db_session: AsyncSession, data_store: DataStore, monkeypatch: pytest.MonkeyPatch
+):
+    patch_dataset_qa_agent(monkeypatch)
+
+    consumer = asyncio.run(
+        select_user_by_id(db=db_session, user_id=data_store.consumer_user_id)
+    )
+    assert consumer is not None
+
+    response = asyncio.run(
+        stream_my_dataset_content(
+            dataset_id=data_store.uploaded_dataset_id,
+            request=ContentRagRequest(question="A 地区的人口是多少？"),
+            current_user=consumer,
+            db=db_session,
+        )
+    )
+    body = asyncio.run(collect_streaming_response(response))
+
+    assert response.media_type == "text/event-stream"
+    assert "event: delta" in body
+    assert "event: done" in body
+    assert "authorized_dataset_content" in body
+    assert "A" in body
+    assert "10" in body
 
 
 @pytest.mark.run(order=21)
