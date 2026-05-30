@@ -1,5 +1,78 @@
 <!-- version list -->
 
+## v0.0.5 (2026-05-30)
+
+### Bug Fixes
+
+- **web**: Resolve known frontend style issues
+  ([`b504a88`](https://github.com/tropical-algae/Axionara/commit/b504a880882526f68f008dfaa4679aeccf2dcfad))
+
+### Chores
+
+- Upgrade vitejs/plugin-vue
+  ([`bce4c83`](https://github.com/tropical-algae/Axionara/commit/bce4c83021c4cb998344c8b65e4cd2de0a5f268b))
+
+- **deps**: Bump esbuild and vite in /web
+  ([`7e0a76c`](https://github.com/tropical-algae/Axionara/commit/7e0a76ca2daceb9b5065b49650ccc1e94bfe0c56))
+
+- **deps**: Update markitdown[pdf] requirement
+  ([`02800a6`](https://github.com/tropical-algae/Axionara/commit/02800a63620cb51526d168f63bf518109e9b5d9d))
+
+- **deps-dev**: Bump mangum from 0.17.0 to 0.21.0
+  ([`8703ab0`](https://github.com/tropical-algae/Axionara/commit/8703ab047f94b069fd966d7411e00c1e9a0c07a0))
+
+- **deps-dev**: Bump sqlacodegen from 3.0.0rc5 to 4.0.3
+  ([`fdec849`](https://github.com/tropical-algae/Axionara/commit/fdec849192fb75bcfa1afd6949ac5a58b8285847))
+
+- **deps-dev**: Bump vite
+  ([`5d02669`](https://github.com/tropical-algae/Axionara/commit/5d02669e2198c382535db899556fe66b6e5a99bd))
+
+### Documentation
+
+- **readme**: Update README
+  ([`65ebc13`](https://github.com/tropical-algae/Axionara/commit/65ebc13fd2cad462beac115b9c0b41511fdb1047))
+
+### Features
+
+- **api**: Queue dataset analysis jobs
+  ([`7357d1f`](https://github.com/tropical-algae/Axionara/commit/7357d1fe954b616344516987be53163ba207a470))
+
+- **api**: Stream dataset qa responses
+  ([`74aabd2`](https://github.com/tropical-algae/Axionara/commit/74aabd2031b75e90821bdb3b57181733f428049a))
+
+- **web**: Add account profile navigation
+  ([`48b421f`](https://github.com/tropical-algae/Axionara/commit/48b421fe2549a46fbe1f6f3cf48b83d0a08bf8cb))
+
+- **web**: Add shared confirmation dialog
+  ([`6ea5f6a`](https://github.com/tropical-algae/Axionara/commit/6ea5f6a957ef2c1b6ddccd7571f8e54b8cff2d89))
+
+- **web**: Add website logo
+  ([`f868e0f`](https://github.com/tropical-algae/Axionara/commit/f868e0f62c68accdc12bece243687ab6931c532f))
+
+- **web**: Expand dataset access controls
+  ([`ec58c0e`](https://github.com/tropical-algae/Axionara/commit/ec58c0e70910a219c53e6c0ea2a508784f9d5db9))
+
+- **web**: Improve admin review workflow
+  ([`dcc3342`](https://github.com/tropical-algae/Axionara/commit/dcc3342c282ee698cf9ec876fd112c2dcf84f867))
+
+- **web**: Improve dataset export flows
+  ([`a1154a7`](https://github.com/tropical-algae/Axionara/commit/a1154a7748c989ebee5ec3d8b10796ae02f7a6ac))
+
+- **web**: Refine provider upload workflow
+  ([`240d35d`](https://github.com/tropical-algae/Axionara/commit/240d35d86763781f21b9ae9a29502a9ae8ea8617))
+
+- **web**: Render streamed copilot responses
+  ([`a8f49ca`](https://github.com/tropical-algae/Axionara/commit/a8f49cac432c6536ca1b847cbf4d405eb8a5796a))
+
+### Testing
+
+- **api**: Cover queued analysis jobs
+  ([`c5d1c45`](https://github.com/tropical-algae/Axionara/commit/c5d1c45119c2e81bfd15248882e25885b89588fa))
+
+- **api**: Cover streaming dataset qa
+  ([`0cbb1e2`](https://github.com/tropical-algae/Axionara/commit/0cbb1e2736873fbe9c9a12a4b5bcf8bf5fdc6d30))
+
+
 ## v0.0.4 (2026-05-26)
 
 ### Chores
