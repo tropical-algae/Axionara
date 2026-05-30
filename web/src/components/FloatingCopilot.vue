@@ -18,7 +18,7 @@
         </header>
 
         <div class="messages">
-          <article v-for="message in messages" :key="message.id" :class="message.role">
+          <article v-for="message in messages" :key="message.id" :class="[message.role, { streaming: message.streaming }]">
             <span>{{ message.role === "user" ? "YOU" : "AI" }}</span>
             <p>{{ message.text }}</p>
           </article>
@@ -41,23 +41,30 @@ import gsap from "gsap";
 import { MessageCircle, Send, X } from "lucide-vue-next";
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 
+import { catalogApi, meApi } from "@/api/services";
 import { useCatalogStore } from "@/stores/catalog";
-import { useMeStore } from "@/stores/me";
 import { useUiStore } from "@/stores/ui";
 
 const ui = useUiStore();
 const catalog = useCatalogStore();
-const me = useMeStore();
 const overlayRef = ref<HTMLElement | null>(null);
 const drawerRef = ref<HTMLElement | null>(null);
 const buttonRef = ref<HTMLElement | null>(null);
 const renderCopilot = ref(ui.copilotOpen);
 let copilotTimeline: gsap.core.Timeline | null = null;
+type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  streaming?: boolean;
+};
+
 const draft = ref("");
 const sending = ref(false);
-const messages = ref([
+const messages = ref<ChatMessage[]>([
   { id: "seed", role: "assistant", text: "我会根据当前页面选择公开市场、公开数据详情或授权数据内容作为问答范围。" }
 ]);
+let activeStreamController: AbortController | null = null;
 
 const title = computed(() => {
   if (ui.chatContext === "catalog") return "数据市场问答";
@@ -74,24 +81,64 @@ function close() {
   ui.closeCopilot();
 }
 
+function findMessage(id: string) {
+  return messages.value.find((message) => message.id === id);
+}
+
+function appendAssistantDelta(messageId: string, delta: string) {
+  const message = findMessage(messageId);
+  if (message) message.text += delta;
+}
+
+function finishAssistantMessage(messageId: string) {
+  const message = findMessage(messageId);
+  if (!message) return;
+  message.streaming = false;
+  if (!message.text.trim()) message.text = "没有获得可用回答。";
+}
+
+function abortActiveStream() {
+  activeStreamController?.abort();
+  activeStreamController = null;
+}
+
 async function send() {
   const question = draft.value.trim();
-  if (!question) return;
-  messages.value.push({ id: crypto.randomUUID(), role: "user", text: question });
+  if (!question || sending.value) return;
+  abortActiveStream();
+
+  const assistantMessageId = crypto.randomUUID();
+  const controller = new AbortController();
+  activeStreamController = controller;
+  messages.value.push(
+    { id: crypto.randomUUID(), role: "user", text: question },
+    { id: assistantMessageId, role: "assistant", text: "", streaming: true }
+  );
   draft.value = "";
   sending.value = true;
+
   try {
-    const response =
-      ui.chatContext === "me-detail" && ui.chatDatasetId
-        ? await me.ask(ui.chatDatasetId, question)
-        : await catalog.ask(question, ui.chatContext === "catalog-detail" ? ui.chatDatasetId ?? undefined : undefined);
-    messages.value.push({ id: crypto.randomUUID(), role: "assistant", text: response.answer || "没有获得可用回答。" });
+    if (ui.chatContext === "me-detail" && ui.chatDatasetId) {
+      await meApi.askStream(ui.chatDatasetId, question, (delta) => appendAssistantDelta(assistantMessageId, delta), undefined, controller.signal);
+    } else if (ui.chatContext === "catalog-detail" && ui.chatDatasetId) {
+      await catalogApi.askDatasetStream(ui.chatDatasetId, question, (delta) => appendAssistantDelta(assistantMessageId, delta), undefined, controller.signal);
+    } else {
+      await catalogApi.askStream(question, undefined, catalog.query.tag_slug, (delta) => appendAssistantDelta(assistantMessageId, delta), undefined, controller.signal);
+    }
+    finishAssistantMessage(assistantMessageId);
   } catch (error) {
-    messages.value.push({ id: crypto.randomUUID(), role: "assistant", text: error instanceof Error ? error.message : "问答服务暂不可用。" });
+    if (controller.signal.aborted) return;
+    const assistantMessage = findMessage(assistantMessageId);
+    if (assistantMessage) {
+      assistantMessage.streaming = false;
+      assistantMessage.text = error instanceof Error ? error.message : "问答服务暂不可用。";
+    }
   } finally {
+    if (activeStreamController === controller) activeStreamController = null;
     sending.value = false;
   }
 }
+
 
 watch(
   () => ui.copilotOpen,
@@ -128,11 +175,13 @@ watch(
 watch(
   () => ui.chatContext,
   () => {
+    abortActiveStream();
     messages.value = [{ id: crypto.randomUUID(), role: "assistant", text: `当前范围已切换为：${title.value}。` }];
   }
 );
 
 onBeforeUnmount(() => {
+  abortActiveStream();
   copilotTimeline?.kill();
 });
 </script>

@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 
 import { catalogApi } from "@/api/services";
-import type { CatalogDataset, CatalogQuery, RagResponse, Tag } from "@/api/types";
+import type { CatalogDataset, CatalogQuery, RagResponse, RagStreamDone, Tag } from "@/api/types";
 
 export const useCatalogStore = defineStore("catalog", {
   state: () => ({
@@ -45,6 +45,17 @@ export const useCatalogStore = defineStore("catalog", {
     },
     ask(question: string, datasetId?: string): Promise<RagResponse> {
       return datasetId ? catalogApi.askDataset(datasetId, question) : catalogApi.ask(question, undefined, this.query.tag_slug);
+    },
+    streamAsk(
+      question: string,
+      onDelta: (delta: string) => void | Promise<void>,
+      onDone?: (payload: RagStreamDone) => void,
+      datasetId?: string,
+      signal?: AbortSignal
+    ) {
+      return datasetId
+        ? catalogApi.askDatasetStream(datasetId, question, onDelta, onDone, signal)
+        : catalogApi.askStream(question, undefined, this.query.tag_slug, onDelta, onDone, signal);
     },
     acquire(datasetId: string) {
       return catalogApi.acquire(datasetId);

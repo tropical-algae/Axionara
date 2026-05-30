@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 
 import { meApi } from "@/api/services";
-import type { ExportJob, MyDataset, RagResponse } from "@/api/types";
+import type { ExportJob, MyDataset, RagResponse, RagStreamDone } from "@/api/types";
 
 export const useMeStore = defineStore("me", {
   state: () => ({
@@ -24,6 +24,15 @@ export const useMeStore = defineStore("me", {
     },
     ask(datasetId: string, question: string): Promise<RagResponse> {
       return meApi.ask(datasetId, question);
+    },
+    streamAsk(
+      datasetId: string,
+      question: string,
+      onDelta: (delta: string) => void | Promise<void>,
+      onDone?: (payload: RagStreamDone) => void,
+      signal?: AbortSignal
+    ) {
+      return meApi.askStream(datasetId, question, onDelta, onDone, signal);
     },
     requestExport(datasetId: string, format: string) {
       return meApi.requestExport(datasetId, format);

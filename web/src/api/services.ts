@@ -11,6 +11,7 @@ import type {
   ExportJob,
   MyDataset,
   RagResponse,
+  RagStreamDone,
   RegisterPayload,
   StorageHealth,
   SystemStatus,
@@ -41,8 +42,12 @@ export const catalogApi = {
   tags: () => api.get<Tag[]>("/api/v1/catalog/tags"),
   ask: (question: string, dataset_id?: string, tag_slug?: string, limit = 5) =>
     api.post<RagResponse>("/api/v1/catalog/ask", { question, dataset_id, tag_slug, limit }),
+  askStream: (question: string, dataset_id: string | undefined, tag_slug: string | undefined, onDelta: (delta: string) => void | Promise<void>, onDone?: (payload: RagStreamDone) => void, signal?: AbortSignal, limit = 5) =>
+    api.stream("/api/v1/catalog/ask/stream", { question, dataset_id, tag_slug, limit }, { onDelta, onDone: (payload) => onDone?.(payload as RagStreamDone), signal }),
   askDataset: (datasetId: string, question: string, limit = 5) =>
     api.post<RagResponse>(`/api/v1/catalog/datasets/${datasetId}/ask`, { question, limit }),
+  askDatasetStream: (datasetId: string, question: string, onDelta: (delta: string) => void | Promise<void>, onDone?: (payload: RagStreamDone) => void, signal?: AbortSignal, limit = 5) =>
+    api.stream(`/api/v1/catalog/datasets/${datasetId}/ask/stream`, { question, limit }, { onDelta, onDone: (payload) => onDone?.(payload as RagStreamDone), signal }),
   acquire: (datasetId: string) => api.post<AccessGrant>(`/api/v1/catalog/datasets/${datasetId}/acquire`)
 };
 
@@ -93,6 +98,8 @@ export const adminApi = {
 export const meApi = {
   datasets: () => api.get<MyDataset[]>("/api/v1/me/datasets"),
   ask: (datasetId: string, question: string, limit = 5) => api.post<RagResponse>(`/api/v1/me/datasets/${datasetId}/ask`, { question, limit }),
+  askStream: (datasetId: string, question: string, onDelta: (delta: string) => void | Promise<void>, onDone?: (payload: RagStreamDone) => void, signal?: AbortSignal, limit = 5) =>
+    api.stream(`/api/v1/me/datasets/${datasetId}/ask/stream`, { question, limit }, { onDelta, onDone: (payload) => onDone?.(payload as RagStreamDone), signal }),
   requestExport: (datasetId: string, target_format: string) =>
     api.post<ExportJob>(`/api/v1/me/datasets/${datasetId}/exports`, { target_format }),
   exports: (dataset_id?: string) => api.get<ExportJob[]>("/api/v1/me/exports", { dataset_id }),

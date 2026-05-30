@@ -140,6 +140,13 @@ export interface RagResponse {
   raw_content_used?: boolean;
 }
 
+export interface RagStreamDone {
+  question?: string;
+  matches?: RagMatch[];
+  source_scope?: string;
+  raw_content_used?: boolean;
+}
+
 export interface AccessGrant {
   id: string;
   dataset_id: string;

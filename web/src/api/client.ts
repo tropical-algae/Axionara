@@ -79,8 +79,10 @@ export const normalizeRequestError = (error: unknown): RequestError => {
   };
 };
 
+const apiBaseUrl = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL || "/");
+
 const service = axios.create({
-  baseURL: normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL || "/"),
+  baseURL: apiBaseUrl,
   timeout: 10000,
   withCredentials: true
 });
@@ -110,6 +112,43 @@ service.interceptors.response.use(
   }
 );
 
+
+export interface StreamEventPayload {
+  delta?: string;
+  message?: string;
+  [key: string]: unknown;
+}
+
+type StreamCallbackResult = void | Promise<void>;
+
+export interface StreamOptions {
+  signal?: AbortSignal;
+  onDelta?: (delta: string) => StreamCallbackResult;
+  onDone?: (payload: StreamEventPayload) => StreamCallbackResult;
+  onEvent?: (event: string, payload: StreamEventPayload) => StreamCallbackResult;
+}
+
+function resolveApiUrl(url: string): string {
+  if (/^https?:\/\//i.test(url)) return url;
+  if (apiBaseUrl === "/") return url;
+  const normalizedUrl = url.startsWith("/") ? url : `/${url}`;
+  return `${apiBaseUrl}${normalizedUrl}`;
+}
+
+function parseStreamEvent(block: string): { event: string; payload: StreamEventPayload } | null {
+  const lines = block.split(/\r?\n/);
+  let event = "message";
+  const data: string[] = [];
+
+  for (const line of lines) {
+    if (line.startsWith("event:")) event = line.slice(6).trim();
+    if (line.startsWith("data:")) data.push(line.slice(5).trimStart());
+  }
+
+  if (!data.length) return null;
+  return { event, payload: JSON.parse(data.join("\n")) as StreamEventPayload };
+}
+
 async function request<T = unknown, Data = unknown>(config: RequestConfig<Data>): Promise<T> {
   const response = await service.request<T, AxiosResponse<T>, Data>(config);
   return response.data;
@@ -118,6 +157,53 @@ async function request<T = unknown, Data = unknown>(config: RequestConfig<Data>)
 export const api = {
   get: <T>(url: string, params?: object) => request<T>({ url, method: "get", params }),
   post: <T, Data = unknown>(url: string, data?: Data, params?: object) => request<T, Data>({ url, method: "post", data, params }),
+  async stream<Data = unknown>(url: string, data: Data, options: StreamOptions = {}) {
+    const headers = new Headers({
+      Accept: "text/event-stream",
+      "Content-Type": "application/json"
+    });
+    const accessToken = token();
+    if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+
+    const response = await fetch(resolveApiUrl(url), {
+      method: "POST",
+      credentials: "include",
+      headers,
+      body: JSON.stringify(data),
+      signal: options.signal
+    });
+
+    if (!response.ok || !response.body) {
+      const detail = await response.text();
+      throw new ApiError(detail || response.statusText, response.status, detail);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done });
+      const chunks = buffer.split(/\r?\n\r?\n/);
+      buffer = chunks.pop() ?? "";
+
+      for (const chunk of chunks) {
+        const parsed = parseStreamEvent(chunk);
+        if (!parsed) continue;
+        await options.onEvent?.(parsed.event, parsed.payload);
+        if (parsed.event === "delta" && typeof parsed.payload.delta === "string") {
+          await options.onDelta?.(parsed.payload.delta);
+        }
+        if (parsed.event === "done") await options.onDone?.(parsed.payload);
+        if (parsed.event === "error") {
+          throw new ApiError(String(parsed.payload.message || "Stream failed"), "STREAM", parsed.payload);
+        }
+      }
+
+      if (done) break;
+    }
+  },
   async download(url: string, filename: string) {
     const response = await service.request<Blob>({
       url,
