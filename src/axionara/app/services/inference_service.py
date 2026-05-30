@@ -16,7 +16,11 @@ from axionara.core.agent.context import (
 from axionara.core.agent.factory import agent_factory
 from axionara.core.agent.store import agent_store
 from axionara.core.db.crud.session_crud import delete_session
-from axionara.core.model.message import AgentResponse, ChatCompleteRequest
+from axionara.core.model.message import (
+    AgentResponse,
+    AgentResponseStream,
+    ChatCompleteRequest,
+)
 from axionara.core.prompt import load_prompt
 
 
@@ -92,12 +96,7 @@ async def agent_response(
         raise
 
 
-async def dataset_qa_agent_response(
-    message: str,
-    context: DatasetQaToolContext,
-    model: str,
-    system_prompt_path: str,
-) -> AgentResponse:
+def _dataset_qa_agent_setup(model: str, system_prompt_path: str) -> tuple[list, MyAgent]:
     blocked_tools = [
         tool_name
         for tool_name in agent_store.get_tool_names()
@@ -110,6 +109,33 @@ async def dataset_qa_agent_response(
         system_prompt=load_prompt(system_prompt_path),
         cache_key="dataset_qa",
     )
+    return tools, agent
+
+
+async def dataset_qa_agent_response(
+    message: str,
+    context: DatasetQaToolContext,
+    model: str,
+    system_prompt_path: str,
+) -> AgentResponse:
+    tools, agent = _dataset_qa_agent_setup(
+        model=model, system_prompt_path=system_prompt_path
+    )
     logger.info(f"Dataset QA agent run without Memory, {len(tools)} Tools")
     with dataset_qa_tool_context(context):
         return await agent.run(message=message, memory=None, tools=tools)
+
+
+async def dataset_qa_agent_stream_response(
+    message: str,
+    context: DatasetQaToolContext,
+    model: str,
+    system_prompt_path: str,
+) -> AsyncIterator[AgentResponseStream]:
+    tools, agent = _dataset_qa_agent_setup(
+        model=model, system_prompt_path=system_prompt_path
+    )
+    logger.info(f"Dataset QA agent stream run without Memory, {len(tools)} Tools")
+    with dataset_qa_tool_context(context):
+        async for response in agent.run_stream(message=message, memory=None, tools=tools):
+            yield response

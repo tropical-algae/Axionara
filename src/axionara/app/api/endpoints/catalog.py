@@ -1,6 +1,7 @@
 from typing import Any
 
 from fastapi import APIRouter, Depends, Security
+from fastapi.responses import StreamingResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.api.deps import get_current_user, get_db
@@ -81,6 +82,24 @@ async def ask_catalog_dataset_profiles(
     )
 
 
+@router.post("/ask/stream")
+async def stream_catalog_dataset_profiles(
+    request: CatalogRagRequest,
+    db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    return StreamingResponse(
+        CatalogRagService().stream(
+            db=db,
+            question=request.question,
+            dataset_id=request.dataset_id,
+            tag_slug=request.tag_slug,
+            limit=request.limit,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 @router.post("/datasets/{dataset_id}/ask", response_model=CatalogRagResponse)
 async def ask_catalog_dataset_profile(
     dataset_id: str,
@@ -93,6 +112,25 @@ async def ask_catalog_dataset_profile(
         dataset_id=dataset_id,
         tag_slug=request.tag_slug,
         limit=request.limit,
+    )
+
+
+@router.post("/datasets/{dataset_id}/ask/stream")
+async def stream_catalog_dataset_profile(
+    dataset_id: str,
+    request: CatalogRagRequest,
+    db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    return StreamingResponse(
+        CatalogRagService().stream(
+            db=db,
+            question=request.question,
+            dataset_id=dataset_id,
+            tag_slug=request.tag_slug,
+            limit=request.limit,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 

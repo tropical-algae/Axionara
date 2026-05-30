@@ -1,3 +1,5 @@
+from collections.abc import AsyncIterator
+
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.services.dataset_qa_agent_service import DatasetQaAgentService
@@ -18,6 +20,22 @@ class AuthorizedContentRagService:
         limit: int = 5,
     ) -> ContentRagResponse:
         return await self.agent_service.ask_authorized_content(
+            db=db,
+            dataset_id=dataset_id,
+            question=question,
+            user=user,
+            limit=limit,
+        )
+
+    def stream(
+        self,
+        db: AsyncSession,
+        dataset_id: str,
+        question: str,
+        user: UserAccount,
+        limit: int = 5,
+    ) -> AsyncIterator[bytes]:
+        return self.agent_service.stream_authorized_content(
             db=db,
             dataset_id=dataset_id,
             question=question,

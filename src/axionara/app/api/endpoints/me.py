@@ -1,7 +1,7 @@
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Security
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axionara.app.api.deps import get_current_user, get_db
@@ -71,6 +71,33 @@ async def ask_my_dataset_content(
         question=request.question,
         user=current_user,
         limit=request.limit,
+    )
+
+
+@router.post("/datasets/{dataset_id}/ask/stream")
+async def stream_my_dataset_content(
+    dataset_id: str,
+    request: ContentRagRequest,
+    current_user: UserAccount = Security(
+        get_current_user,
+        scopes=[
+            ScopeType.CONSUMER.value,
+            ScopeType.PROVIDER.value,
+            ScopeType.ADMIN.value,
+        ],
+    ),
+    db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    return StreamingResponse(
+        AuthorizedContentRagService().stream(
+            db=db,
+            dataset_id=dataset_id,
+            question=request.question,
+            user=current_user,
+            limit=request.limit,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 
