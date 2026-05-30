@@ -171,15 +171,12 @@ button:disabled {
 }
 
 .brand-mark {
-  display: grid;
+  display: block;
   flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
-  place-items: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  object-fit: contain;
   border-radius: var(--radius);
-  background: var(--accent);
-  color: #fff;
-  font-weight: 850;
   box-shadow: var(--shadow-sm);
 }
 
@@ -2318,6 +2315,23 @@ label select {
   gap: 16px;
   padding: 22px;
   border-bottom: 1px solid var(--line);
+}
+
+.copilot-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.copilot-logo {
+  display: block;
+  flex: 0 0 auto;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  object-fit: contain;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
 }
 
 .copilot-drawer header span {

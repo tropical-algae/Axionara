@@ -7,9 +7,12 @@
     <div v-if="renderCopilot" ref="overlayRef" class="copilot-overlay" @click.self="close">
       <aside ref="drawerRef" class="copilot-drawer">
         <header>
-          <div>
-            <span>AXIONARA COPILOT</span>
-            <strong>{{ title }}</strong>
+          <div class="copilot-heading">
+            <img class="copilot-logo" src="/axionara.svg" alt="" aria-hidden="true" />
+            <div>
+              <span>AXIONARA COPILOT</span>
+              <strong>{{ title }}</strong>
+            </div>
           </div>
           <button type="button" @click="close"><X :size="20" /></button>
         </header>

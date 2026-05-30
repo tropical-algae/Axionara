@@ -1,7 +1,7 @@
 <template>
   <header class="topbar">
     <RouterLink class="brand" to="/">
-      <span class="brand-mark">A</span>
+      <img class="brand-mark" src="/axionara.svg" alt="" aria-hidden="true" />
       <span>
         <strong>Axionara</strong>
         <em>Data Asset Console</em>
