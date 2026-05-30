@@ -1,11 +1,15 @@
-<h1 align="center">Axionara</h1>
+<div align="center">
+  <img src=".github/assets/axionara.png" style="vertical-align:middle;height:5em;">
+  <h1 style="margin: 0.3rem" align="center">Axionara</h1>
+</div>
 
 <p align="center"><strong>面向政务与组织数据协作的可信数据资产平台</strong></p>
 
 <p align="center">
   <a href="README.md"><img src="https://img.shields.io/badge/Language-中文-blue.svg"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL3.0-green.svg"></a>
 </p>
+
 **Axionara** 是一个覆盖数据资产全生命周期的全栈平台，融合了数据上传、治理审核、市场发布、授权使用与智能问答等核心环节。平台将数据提供者、管理员与使用者纳入统一工作流，构建起全流程可控、安全可信的数据要素一体化服务体系。
 
 待交易数据经由自动化管线完成解析、清洗与风险识别后，由管理员统一审核发布，提供给经过授权认证的平台使用者进行交易或导出。
@@ -86,11 +90,11 @@ http://localhost:8000
 http://localhost:8000/api/v1/system/status
 ```
 
-> 如果不配置 `GPT_BASE_URL` 和 `GPT_API_KEY`，普通数据管理功能仍可使用，但需要大模型的分析、摘要和问答能力会不可用。
+> 如果不配置 `GPT_BASE_URL` 和 `GPT_API_KEY`，需要大模型的分析、摘要和问答能力将不可用。
 
 ### Docker Compose
 
-[暂未编写 Docker Compose]
+暂未编写，未来补全
 
 ### Volume Explanation
 

@@ -3,7 +3,7 @@
     <header class="section-header span-all">
       <div>
         <span class="eyebrow">PROVIDER INGEST FACTORY</span>
-        <h1>数据提供者工作台</h1>
+        <h1>数据工作台</h1>
       </div>
       <RouterLink class="primary-action" to="/provider/upload">上传新数据</RouterLink>
     </header>
